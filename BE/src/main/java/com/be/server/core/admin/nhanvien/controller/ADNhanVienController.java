@@ -1,9 +1,9 @@
 package com.be.server.core.admin.nhanvien.controller;
 
-import com.be.server.core.admin.nhanvien.model.request.ADNhanVienRequest;
-import com.be.server.core.admin.nhanvien.model.request.ADNhanVienSearchRequest;
-import com.be.server.core.admin.nhanvien.model.request.CheckDuplicateRequest;
-import com.be.server.core.admin.nhanvien.model.request.CheckDuplicateResponse;
+import com.be.server.core.admin.nhanvien.request.ADNhanVienRequest;
+import com.be.server.core.admin.nhanvien.request.ADNhanVienSearchRequest;
+import com.be.server.core.admin.nhanvien.request.CheckDuplicateRequest;
+import com.be.server.core.admin.nhanvien.request.CheckDuplicateResponse;
 import com.be.server.core.admin.nhanvien.service.ADNhanVienService;
 import com.be.server.infrastructure.constant.MappingConstants;
 import com.be.server.utils.Helper;

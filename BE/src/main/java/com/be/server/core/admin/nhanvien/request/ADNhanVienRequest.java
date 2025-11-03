@@ -1,4 +1,4 @@
-package com.be.server.core.admin.nhanvien.model.request;
+package com.be.server.core.admin.nhanvien.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
