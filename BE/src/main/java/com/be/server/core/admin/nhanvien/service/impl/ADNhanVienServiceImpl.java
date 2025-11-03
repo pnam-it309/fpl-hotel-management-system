@@ -1,7 +1,7 @@
 package com.be.server.core.admin.nhanvien.service.impl;
 
-import com.be.server.core.admin.nhanvien.model.request.ADNhanVienRequest;
-import com.be.server.core.admin.nhanvien.model.request.ADNhanVienSearchRequest;
+import com.be.server.core.admin.nhanvien.request.ADNhanVienRequest;
+import com.be.server.core.admin.nhanvien.request.ADNhanVienSearchRequest;
 import com.be.server.core.admin.nhanvien.repository.ADNhanVienRepository;
 import com.be.server.core.admin.nhanvien.service.ADNhanVienService;
 import com.be.server.core.common.base.PageableObject;

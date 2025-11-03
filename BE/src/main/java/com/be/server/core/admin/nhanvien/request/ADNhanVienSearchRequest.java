@@ -1,4 +1,4 @@
-package com.be.server.core.admin.nhanvien.model.request;
+package com.be.server.core.admin.nhanvien.request;
 
 import com.be.server.core.common.base.PageableRequest;
 import lombok.AllArgsConstructor;

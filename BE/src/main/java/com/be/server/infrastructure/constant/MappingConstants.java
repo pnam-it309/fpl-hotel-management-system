@@ -42,6 +42,5 @@ public class MappingConstants {
     public static final String API_PERMITALL_PROFILE= API_PERMITALL_PREFIX + "/profile";
     public static final String API_PERMITALL_CART= API_PERMITALL_PREFIX + "/cart";
     public static final String API_PERMITALL_ORDER_HISTORY= API_PERMITALL_PREFIX + "/don-mua";
-
-
+    public static final String API_ROOM_USAGE_HISTORY = API_PERMITALL_PREFIX + "/room-usage";
 }
