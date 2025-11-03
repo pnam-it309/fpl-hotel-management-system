@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -28,7 +29,7 @@ public class Phong extends PrimaryEntity implements Serializable {
     private String loaiPhong;
 
     @Column(name = "gia_hien_tai")
-    private String giaHienTai;
+    private BigDecimal giaHienTai;
 
     @Column(name = "suc_chua")
     private String sucChua;
@@ -36,5 +37,9 @@ public class Phong extends PrimaryEntity implements Serializable {
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "trang_thai_phong")
     private RoomStatus trangThaiPhong;
+
+    @ManyToOne
+    @JoinColumn(name = "id_bang_gia")
+    private BangGia bangGia;
 
 }
