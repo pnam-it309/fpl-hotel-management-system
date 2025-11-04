@@ -1,5 +1,8 @@
 <template>
   <DivCustom label="Danh sách phòng" customClasses="mt-5">
+    <template #icon>
+      <HomeOutlined />
+    </template>
     <!-- Thanh trên: chứa nút lịch sử -->
     <div
       style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -150,14 +153,14 @@
 <script setup lang="ts">
 import DivCustom from '@/components/custom/Div/DivCustomTable.vue'
 import type {TableColumnsType} from 'ant-design-vue'
-import {ref, reactive, watch} from 'vue'
+import {ref, reactive, watch, computed} from 'vue'
 import {getAllRoomUsageHistory} from '@/services/api/admin/phong.api.ts'
 import type {LeTanResponse, LsDatPhongRequest} from '@/services/api/admin/phong.api.ts'
 import dayjs from 'dayjs'
 import GlobalPagination from '@/components/custom/Table/GlobalPagination.vue'
 import { HomeOutlined } from '@ant-design/icons-vue'
 
-defineProps<{
+const props = defineProps<{
   rooms: any[]
   paginationParams: { page: number; size: number }
   totalItems: number
@@ -201,9 +204,6 @@ const formatCurrency = (value: number) => {
     currency: 'VND'
   }).format(value)
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 
 const getRoomStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
