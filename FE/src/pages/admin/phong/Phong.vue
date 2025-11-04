@@ -1,15 +1,20 @@
 <template>
   <div class="p-4">
     <PhongTable :rooms="rooms" :pagination-params="paginationParams" :total-items="totalItems"
-      @page-change="handlePageChange" />
+      @page-change="handlePageChange"
+      @delete="handleDeleteClick"
+      
+      />
+      
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import PhongTable from './PhongTable.vue'
-import { getRooms } from '@/services/api/admin/phong.api'
+import { deleteRoom, getRooms } from '@/services/api/admin/phong.api'
 import { toast } from 'vue3-toastify'
+import { Modal } from 'ant-design-vue'
 
 const rooms = ref<any[]>([])
 const totalItems = ref(0)
@@ -40,6 +45,24 @@ const handlePageChange = (params: { page: number; pageSize: number }) => {
   paginationParams.value.size = params.pageSize
   fetchRooms()
 }
+const handleDeleteClick = async (id: string) => {
+  Modal.confirm({
+    title: 'Xác nhận xóa phòng',
+    content: 'Bạn có chắc chắn muốn xóa phòng này không?',
+    okText: 'Xóa',
+    cancelText: 'Hủy',
+    okType: 'danger',
+    onOk: async () => {
+      try {
+        const res = await deleteRoom(id); // local variable
+        toast.success(res.message);
+        fetchRooms(); 
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || 'Xóa phòng thất bại');
+      }
+    }
+  });
+};
 
 onMounted(() => {
   fetchRooms()

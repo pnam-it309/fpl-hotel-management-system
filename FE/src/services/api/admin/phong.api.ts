@@ -32,3 +32,12 @@ export const getRooms = async (params: ParamsGetPhong) => {
 
   return res.data;
 };
+export const deleteRoom = async (id:string) => {
+  const res = (await request({
+    url: `${PREFIX_API_PHONG_ADMIN}/changeStatus/${id}`,
+    method: "PUT",
+   
+  })) as AxiosResponse<DefaultResponse<PaginationResponse<Array<PhongResponse>>>>;
+
+  return res.data;
+};
