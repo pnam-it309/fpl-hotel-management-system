@@ -1,4 +1,4 @@
-package com.be.server.core.admin.lichsu.repository;
+package com.be.server.core.admin.phong.repository;
 
 import com.be.server.entity.DichVuPhatSinh;
 import com.be.server.repository.DichVuPhatSinhRepository;

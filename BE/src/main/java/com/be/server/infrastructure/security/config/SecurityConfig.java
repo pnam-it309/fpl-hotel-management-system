@@ -115,7 +115,6 @@ public class SecurityConfig {
                                 "/auth/**",
                                 Helper.appendWildcard(MappingConstants.API_AUTH_PREFIX),
                                 Helper.appendWildcard(MappingConstants.API_PERMITALL_PREFIX),
-                                MappingConstants.API_ROOM_USAGE_HISTORY,
                                 "/oauth2/**"
                         )
                         .permitAll()

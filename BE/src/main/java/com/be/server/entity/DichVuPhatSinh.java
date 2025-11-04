@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -29,7 +30,7 @@ public class DichVuPhatSinh extends PrimaryEntity implements Serializable {
     private String donGia;
 
     @Column(name = "thanh_tien")
-    private String thanhTien;
+    private BigDecimal thanhTien;
 
     @ManyToOne
     @JoinColumn(name = "id_dat_phong")

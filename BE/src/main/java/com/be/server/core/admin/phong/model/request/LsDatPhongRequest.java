@@ -1,4 +1,4 @@
-package com.be.server.core.admin.lichsu.model.request;
+package com.be.server.core.admin.phong.model.request;
 
 import com.be.server.core.common.base.PageableRequest;
 import lombok.AllArgsConstructor;

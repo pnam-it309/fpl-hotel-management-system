@@ -1,6 +1,6 @@
-package com.be.server.core.admin.lichsu.repository;
+package com.be.server.core.admin.phong.repository;
 
-import com.be.server.core.admin.lichsu.model.response.LeTanResponse;
+import com.be.server.core.admin.phong.model.response.LeTanResponse;
 import com.be.server.repository.DatPhongRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,15 +14,13 @@ import java.time.LocalDateTime;
 public interface LsDatPhongRepository extends DatPhongRepository {
 
     @Query("""
-                SELECT new com.be.server.core.admin.lichsu.model.response.LeTanResponse(
+                SELECT new com.be.server.core.admin.phong.model.response.LeTanResponse(
                     u.id,
                     kh.hoTen,
                     u.maPhong,
+                    u.tenPhong,
                     u.thoiGianDat,
-                    lt.tenLeTan,
                     u.giaHienTai,
-                    u.thoiGianCheckIn,
-                    u.thoiGianCheckOut,
                     u.trangThaiPhong
                 )
                 FROM DatPhong u
@@ -30,9 +28,10 @@ public interface LsDatPhongRepository extends DatPhongRepository {
                 LEFT JOIN LeTan lt ON ls.leTan.id = lt.id
                 LEFT JOIN KhachHang kh ON u.khachHang.id = kh.id
                 WHERE u.trangThaiPhong = 1
-                AND (:tenKhachHang IS NULL OR kh.id = :tenKhachHang)
-                          AND (:tuNgay IS NULL OR u.thoiGianCheckIn >= :tuNgay)
-                          AND (:denNgay IS NULL OR u.thoiGianCheckOut <= :denNgay)
+                  AND (:tenKhachHang IS NULL OR kh.id = :tenKhachHang)
+                  AND (:tuNgay IS NULL OR u.thoiGianDat >= :tuNgay)
+                  AND (:denNgay IS NULL OR u.thoiGianDat <= :denNgay)
+                GROUP BY u.id, kh.hoTen, u.maPhong, u.tenPhong, u.thoiGianDat, u.giaHienTai, u.trangThaiPhong
             """)
     Page<LeTanResponse> roomUsageHistory(
             @Param("tenKhachHang") String tenKhachHang,

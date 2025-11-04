@@ -23,6 +23,32 @@ export type PhongResponse = {
   trangThaiPhong: number;
 };
 
+export type LsDatPhongRequest  = {
+  tenKhachHang?: string;
+  tuNgay?: string | null;
+  denNgay?: string | null;
+};
+export type RoomStatus = 0 | 1 | 2;
+
+export interface LeTanResponse {
+  datPhongId: string;
+  hoTen: string;
+  maPhong: string;
+  tenPhong: string;
+  giaHienTai: number;
+  thoiGianDat: string;
+  trangThaiPhong: RoomStatus;
+  dichVuPhatSinh: string[];
+  tongTienPhatSinh: number;
+}
+
+function formatDateTimeRange(request: LsDatPhongRequest) {
+  const payload = { ...request };
+  if (payload.tuNgay) payload.tuNgay += "T00:00:00";
+  if (payload.denNgay) payload.denNgay += "T23:59:59";
+  return payload;
+}
+
 export const getRooms = async (params: ParamsGetPhong) => {
   const res = (await request({
     url: `${PREFIX_API_PHONG_ADMIN}`,
@@ -32,3 +58,15 @@ export const getRooms = async (params: ParamsGetPhong) => {
 
   return res.data;
 };
+
+export const getAllRoomUsageHistory = async (params: LsDatPhongRequest) => {
+  const res = await request({
+    url: `${PREFIX_API_PHONG_ADMIN}/history`,
+    method: "GET",
+    params: formatDateTimeRange(params),
+  }) as AxiosResponse<DefaultResponse<PaginationResponse<Array<LeTanResponse>>>>;
+
+  return res.data;
+};
+
+
