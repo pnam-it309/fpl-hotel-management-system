@@ -1,10 +1,15 @@
 package com.be.server.core.admin.phong.service.impl;
 
 import com.be.server.core.admin.phong.model.request.ADPhongSearchRequest;
+import com.be.server.core.admin.phong.model.request.LsDatPhongRequest;
+import com.be.server.core.admin.phong.model.response.LeTanResponse;
 import com.be.server.core.admin.phong.repository.ADPhongRepository;
+import com.be.server.core.admin.phong.repository.LsDatPhongRepository;
+import com.be.server.core.admin.phong.repository.LsDichVuPhatSinhRepository;
 import com.be.server.core.admin.phong.service.ADPhongService;
 import com.be.server.core.common.base.PageableObject;
 import com.be.server.core.common.base.ResponseObject;
+import com.be.server.entity.DichVuPhatSinh;
 import com.be.server.entity.Phong;
 import com.be.server.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +19,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ADPhongServiceImpl implements ADPhongService {
 
     private final ADPhongRepository adPhongRepository;
+
+    private final LsDatPhongRepository lsDatPhongRepository;
+
+    private final LsDichVuPhatSinhRepository dichVuPhatSinhRepository;
 
     @Override
     public ResponseObject<?> getAllPhong(ADPhongSearchRequest request) {
@@ -95,4 +109,35 @@ public class ADPhongServiceImpl implements ADPhongService {
             );
         }
     }
+
+    @Override
+    public ResponseObject<?> roomUsageHistory(LsDatPhongRequest request) {
+        Pageable pageable = Helper.createPageable(request, "created_date");
+        Page<LeTanResponse> page = lsDatPhongRepository.roomUsageHistory(
+                request.getTenKhachHang(),
+                request.getTuNgay(),
+                request.getDenNgay(),
+                pageable
+        );
+        page.forEach(item -> {
+            List<DichVuPhatSinh> dichVus = dichVuPhatSinhRepository.findByDatPhongId(item.getDatPhongId());
+            List<String> tenDichVus = dichVus.stream()
+                    .map(DichVuPhatSinh::getTenDichVu)
+                    .collect(Collectors.toList());
+            item.setDichVuPhatSinh(tenDichVus);
+            BigDecimal tongThanhTien = dichVus.stream()
+                    .map(DichVuPhatSinh::getThanhTien)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            item.setTongTienPhatSinh(tongThanhTien);
+        });
+
+        return new ResponseObject<>(
+                PageableObject.of(page),
+                HttpStatus.OK,
+                "Lấy thành công lịch sử đặt phòng"
+        );
+    }
+
 }
