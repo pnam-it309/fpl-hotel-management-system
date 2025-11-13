@@ -11,6 +11,8 @@ import com.be.server.core.common.base.PageableObject;
 import com.be.server.core.common.base.ResponseObject;
 import com.be.server.entity.LoaiPhong;
 import com.be.server.entity.Phong;
+import com.be.server.infrastructure.constant.EntityStatus;
+import com.be.server.infrastructure.constant.TrangThaiPhong;
 import com.be.server.infrastructure.constant.EnLoaiPhong;
 import com.be.server.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -37,105 +39,60 @@ public class ADPhongServiceImpl implements ADPhongService {
     @Override
     public ResponseObject<?> getAllPhong(ADPhongSearchRequest request) {
 
-        System.out.println(adPhongRepository.getAllPhong(Helper.createPageable(request), request));
+        if (request.getPage() <= 0) {
+            request.setPage(1);
+        }
 
         return ResponseObject.successForward(
                 PageableObject.of(adPhongRepository.getAllPhong(
-                        Helper.createPageable(request), request
-                )), "lấy danh sách thành công"
+                        request.getTuKhoa(),
+                        request.getLoaiPhong(),
+                        request.getTrangThaiPhong() != null ? request.getTrangThaiPhong() : null,
+                        request.getGiaMin(),
+                        request.getGiaMax(),
+                        request.getSucChuaMin(),
+                        request.getSucChuaMax(),
+                        request.getTang(),
+                        Helper.createPageable(request, "createDate")
+                )),
+                "Lấy danh sách thành công"
         );
 
     }
 
-//    private boolean hasFilters(ADPhongSearchRequest request) {
-//        return (request.getQ() != null && !request.getQ().trim().isEmpty()) ||
-//                request.getLoaiPhong() != null ||
-//                request.getTrangThaiPhong() != null ||
-//                request.getGiaMin() != null ||
-//                request.getGiaMax() != null ||
-//                request.getSucChuaMin() != null ||
-//                request.getSucChuaMax() != null;
-//    }
-//
-//    @Override
-//    public ResponseObject<?> getPhongById(String id) {
-//        try {
-//            return adPhongRepository.findByIdProjection(id)
-//                    .map(phong -> new ResponseObject<>(
-//                            phong,
-//                            HttpStatus.OK,
-//                            "Lấy thông tin phòng thành công"
-//                    ))
-//                    .orElseGet(() -> new ResponseObject<>(
-//                            null,
-//                            HttpStatus.NOT_FOUND,
-//                            "Không tìm thấy phòng"
-//                    ));
-//
-//        } catch (Exception e) {
-//            log.error("Lỗi khi lấy thông tin phòng: ", e);
-//            return new ResponseObject<>(
-//                    null,
-//                    HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Không thể tải thông tin phòng"
-//            );
-//        }
-//    }
-//
-//    @Override
-//    public ResponseObject<?> roomUsageHistory(LsDatPhongRequest request) {
-//        Pageable pageable = Helper.createPageable(request, "created_date");
-//        Page<LeTanResponse> page = lsDatPhongRepository.roomUsageHistory(
-//                request.getTenKhachHang(),
-//                request.getTuNgay(),
-//                request.getDenNgay(),
-//                pageable
-//        );
-//        page.forEach(item -> {
-//            List<DichVuPhatSinh> dichVus = dichVuPhatSinhRepository.findByDatPhongId(item.getDatPhongId());
-//            List<String> tenDichVus = dichVus.stream()
-//                    .map(DichVuPhatSinh::getTenDichVu)
-//                    .collect(Collectors.toList());
-//            item.setDichVuPhatSinh(tenDichVus);
-//            BigDecimal tongThanhTien = dichVus.stream()
-//                    .map(DichVuPhatSinh::getThanhTien)
-//                    .filter(Objects::nonNull)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            item.setTongTienPhatSinh(tongThanhTien);
-//        });
-//
-//        return new ResponseObject<>(
-//                PageableObject.of(page),
-//                HttpStatus.OK,
-//                "Lấy thành công lịch sử đặt phòng"
-//        );
-//    }
-//
-//    @Override
-//    public ResponseObject<?> changeStatusPhong(String id) {
-//        Optional<Phong> existingPhong = adPhongRepository.findById(id);
-//        if (existingPhong.isPresent()) {
-//            Phong phong = existingPhong.get();
-//            if (phong.getStatus().equals(EntityStatus.INACTIVE)) {
-//                phong.setStatus(EntityStatus.ACTIVE);
-//            } else {
-//                if(phong.getTrangThaiPhong().equals(RoomStatus.TRONG)) {
-//                    phong.setStatus(EntityStatus.INACTIVE);
-//                }
-//                else if (phong.getTrangThaiPhong().equals(RoomStatus.DANG_SU_DUNG)) {
-//                    return new ResponseObject<>(null, HttpStatus.BAD_REQUEST, "Phòng đang được sử dụng!");
-//                }
-//                else if (phong.getTrangThaiPhong().equals(RoomStatus.DA_DAT)) {
-//                    return new ResponseObject<>(null, HttpStatus.BAD_REQUEST, "Phòng đã được đặt!");
-//                }
-//            }
-//            adPhongRepository.save(phong);
-//            return new ResponseObject<>(null, HttpStatus.OK, "Thay đổi trạng thái phòng thành công!");
-//        }
-//        return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Phòng không tồn tại!");
-//
-//    }
+    @Override
+    public ResponseObject<?> changeStatusPhong(String id) {
+        Optional<Phong> existingPhong = adPhongRepository.findById(id);
+        if (existingPhong.isPresent()) {
+            Phong phong = existingPhong.get();
+            if (phong.getStatus().equals(EntityStatus.INACTIVE)) {
+                phong.setStatus(EntityStatus.ACTIVE);
+            } else {
+                if(phong.getTrangThaiPhong().equals(TrangThaiPhong.TRONG)) {
+                    phong.setStatus(EntityStatus.INACTIVE);
+                }
+                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DANG_SU_DUNG)) {
+                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được sử dụng!");
+                }
+                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DA_DAT)) {
+                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đã được đặt!");
+                }
+                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DANG_DON)) {
+                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được dọn !");
+                }
+                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.BAO_TRI)) {
+                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được bảo trì !");
+                }
+                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.TAM_KHOA)) {
+                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được tạm khóa !");
+                }
+            }
+            adPhongRepository.save(phong);
+            return new ResponseObject<>(null, HttpStatus.OK, "Xóa phòng thành công!");
+        }
+        return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Phòng không tồn tại!");
+
+    }
 
     @Override
     public ResponseObject<?> savePhong(ADSavePhongRequest phong){
