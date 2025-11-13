@@ -23,4 +23,9 @@ public class ADPhongController {
     public ResponseEntity<?> getDanhSachPhong(@ModelAttribute ADPhongSearchRequest request) {
         return Helper.createResponseEntity(adPhongService.getAllPhong(request));
     }
+
+    @PutMapping("changeStatus/{id}")
+    public ResponseEntity<?>changeStatus(@PathVariable String id) {
+        return Helper.createResponseEntity(adPhongService.changeStatusPhong(id));
+    }
 }
