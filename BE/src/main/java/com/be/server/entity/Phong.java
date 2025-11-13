@@ -32,7 +32,7 @@ public class Phong extends PrimaryEntity implements Serializable {
     private BigDecimal giaHienTai;
 
     @Column(name = "suc_chua")
-    private String sucChua;
+    private Integer sucChua;
 
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "trang_thai_phong")

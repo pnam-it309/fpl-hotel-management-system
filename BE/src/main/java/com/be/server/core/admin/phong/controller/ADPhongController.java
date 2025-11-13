@@ -2,6 +2,7 @@ package com.be.server.core.admin.phong.controller;
 
 
 import com.be.server.core.admin.phong.model.request.ADPhongSearchRequest;
+import com.be.server.core.admin.phong.model.request.ADSavePhongRequest;
 import com.be.server.core.admin.phong.model.request.LsDatPhongRequest;
 import com.be.server.core.admin.phong.service.ADPhongService;
 import com.be.server.infrastructure.constant.MappingConstants;
@@ -37,4 +38,14 @@ public class ADPhongController {
 //    public ResponseEntity<?>changeStatus(@PathVariable String id) {
 //        return Helper.createResponseEntity(service.changeStatusPhong(id));
 //    }
+
+    @PostMapping("/addPhong")
+    public ResponseEntity<?> taoPhong(@RequestBody ADSavePhongRequest request){
+        return Helper.createResponseEntity(adPhongService.savePhong(request));
+    }
+
+    @GetMapping("/loai-phong")
+    public ResponseEntity<?> loaiPhong(){
+        return Helper.createResponseEntity(adPhongService.getAllLoaiPhong());
+    }
 }
