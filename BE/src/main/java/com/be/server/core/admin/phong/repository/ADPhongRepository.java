@@ -68,4 +68,8 @@ public interface ADPhongRepository extends PhongRepository {
 //
 //    @Query("SELECT p FROM Phong p LEFT JOIN FETCH p.bangGia WHERE p.id = :id AND p.status = 0")
 //    Optional<PhongProjection> findByIdProjection(@Param("id") String id);
+
+    Optional<Phong> findByMa(String ma);
+
+    Optional<Phong> findByTen(String ten);
 }
