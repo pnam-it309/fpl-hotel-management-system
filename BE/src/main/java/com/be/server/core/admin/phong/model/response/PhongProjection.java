@@ -7,16 +7,18 @@ import java.math.BigDecimal;
 
 public interface PhongProjection extends IsIdentify, IsEntityPhong {
 
-//    String getMa();
-//
-//    String getTen();
-//
-//    BigDecimal getPrice();
-//
-//    Integer getTang();
-//
-//    String getLoaiPhong();
-//
-//    String getSucChua();
+    String getMa();
+
+    String getTen();
+
+    BigDecimal getPrice();
+
+    Integer getTang();
+
+    String getLoaiPhong();
+
+    Integer getSucChua();
+
+    String getTrangThaiHoatDong();
 
 }
