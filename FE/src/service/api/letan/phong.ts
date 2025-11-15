@@ -1,5 +1,6 @@
 // src/service/api/letan/phong.ts
 import { API_LE_TAN_PHONG } from '@/constants/url'
+import { API_LE_TAN_LOAI_PHONG } from '@/constants/url'
 import type { AxiosResponse } from 'axios'
 import type { ResponseList, PaginationParams, DefaultResponse } from '@/typings/api/api.common'
 import request from '@/service/request'
@@ -9,7 +10,7 @@ export interface ParamsGetRoom extends PaginationParams {
   tuKhoa?: string
   tang?: number
   loaiPhong?: string
-  trangThaiPhong?: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThaiHoatDong?:  'HOAT_DONG' | 'BAO_TRI' | 'NGUNG_HOAT_DONG'
   giaMin?: number
   giaMax?: number
   sucChuaMin?: number
@@ -25,24 +26,29 @@ export interface PhongResponse extends ResponseList {
   tang: number
   loaiPhong: string
   sucChua: string
-  trangThaiPhong: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThaiHoatDong?:  'HOAT_DONG' | 'BAO_TRI' | 'NGUNG_HOAT_DONG'
 }
 
 export interface AddPhongRequest {
   ma: string
   ten: string
   idLoaiPhong: string
-  sucChua: number
   tang: number
-  trangThaiPhong: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThaiHoatDong: 'HOAT_DONG' | 'BAO_TRI' | 'NGUNG_HOAT_DONG'
 }
 
-export interface LoaiPhongResponse {
+export interface RoomTypeResponse extends ResponseList {
   id: string
-  giaHienTai: number
+  ma: string
+  ten: string
+  soGiuongDon: number
+  soGiuongDoi: number
+  soNguoiQuyDinh: number
   soLuongNguoiToiDa: number
-  ten : string
+  giaCaNgay: number
+  status: 'ACTIVE' | 'INACTIVE'
 }
+
 
 export async function getAllRooms(params: ParamsGetRoom) {
   try {
@@ -102,16 +108,17 @@ export async function addPhong(data: AddPhongRequest) {
   }
 }
 
-export async function getAllLoaiPhong() {
+// --- Lấy danh sách loại phòng ---
+export async function getRoomTypes() {
   try {
-    const res = (await request({
+    const res = await request({
       url: `${API_LE_TAN_PHONG}/loai-phong`,
       method: 'GET',
-    })) as AxiosResponse<DefaultResponse<LoaiPhongResponse[]>>
+    }) as AxiosResponse<DefaultResponse<RoomTypeResponse[]>>
 
-    return res.data.data || []
-  }
-  catch (error: any) {
+    return  res.data.data || []
+    
+  } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Không thể tải danh sách loại phòng')
   }
 }

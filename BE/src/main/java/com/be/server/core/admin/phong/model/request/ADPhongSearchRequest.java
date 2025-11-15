@@ -1,6 +1,7 @@
 package com.be.server.core.admin.phong.model.request;
 
 import com.be.server.core.common.base.PageableRequest;
+import com.be.server.infrastructure.constant.TrangThaiHoatDong;
 import com.be.server.infrastructure.constant.TrangThaiPhong;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class ADPhongSearchRequest extends PageableRequest {
 
     private String loaiPhong;
 
-    private TrangThaiPhong trangThaiPhong;
+    private TrangThaiHoatDong trangThaiHoatDong;
 
     private BigDecimal giaMin;
 
