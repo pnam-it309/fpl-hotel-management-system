@@ -13,7 +13,7 @@
             :icon="room.cleanStatus === 'clean' ? 'carbon:magic-wand' : 'icon-park-outline:cosmetic-brush'" 
           />
         </n-icon-wrapper>
-        {{ room.cleanStatus === 'clean' ? 'Đã dọn' : 'Chưa dọn' }}
+        {{ room.cleanStatus === 'clean' ? 'Sạch' : 'Chưa dọn' }}
       </n-tag>
 
       <n-dropdown :options="menuOptions" trigger="click" @select="handleMenuSelect">
