@@ -4,7 +4,7 @@
 <div class="flex items-center space-x-4">
     <n-button-group>
       <n-button :type="currentView === 'list' ? 'primary' : 'default'" @click="currentView = 'list'">
-        Danh sách
+        Sơ đồ
       </n-button>
 
       <n-button :type="currentView === 'timeline' ? 'primary' : 'default'" @click="currentView = 'timeline'">
@@ -12,7 +12,7 @@
       </n-button>
 
       <n-button :type="currentView === 'map' ? 'primary' : 'default'" @click="currentView = 'map'">
-        Sơ đồ
+        Danh sách
       </n-button>
     </n-button-group>
 
