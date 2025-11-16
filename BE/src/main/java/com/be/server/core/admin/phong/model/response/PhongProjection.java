@@ -17,7 +17,9 @@ public interface PhongProjection extends IsIdentify{
 
     String getLoaiPhong();
 
-    String getSucChua();
+    Integer getSucChua();
+
+    String getTrangThaiHoatDong();
 
     String getTrangThai();
 

@@ -19,14 +19,15 @@ public class ADPhongController {
 
     @GetMapping
     public ResponseEntity<?> getDanhSachPhong(@ModelAttribute ADPhongSearchRequest request) {
+
         return Helper.createResponseEntity(adPhongService.getAllPhong(request));
     }
-
-    @PutMapping("changeStatus/{id}")
-    public ResponseEntity<?>changeStatus(@PathVariable String id) {
-        return Helper.createResponseEntity(adPhongService.changeStatusPhong(id));
-    }
-
+//
+//    @PutMapping("changeStatus/{id}")
+//    public ResponseEntity<?>changeStatus(@PathVariable String id) {
+//        return Helper.createResponseEntity(adPhongService.changeStatusPhong(id));
+//    }
+//
     @PostMapping("/addPhong")
     public ResponseEntity<?> taoPhong(@RequestBody ADSavePhongRequest request){
         return Helper.createResponseEntity(adPhongService.savePhong(request));

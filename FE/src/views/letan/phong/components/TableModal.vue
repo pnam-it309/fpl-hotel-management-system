@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineEmits, defineProps, onMounted, ref, watch } from 'vue'
-import { addPhong, getAllLoaiPhong } from '@/service/api/letan/phong'
+import { addPhong, getRoomTypes } from '@/service/api/letan/phong'
 
 interface Room {
   maPhong: string
@@ -9,7 +9,7 @@ interface Room {
   loaiPhong?: string
   gia?: number
   sucChua?: number
-  trangThai: string
+  trangThaiHoatDong: string
 }
 
 interface Props {
@@ -21,7 +21,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'update:visible', visible: boolean): void
-  (e: 'refresh'): void // 👈 emit để load lại danh sách sau khi thêm
+  (e: 'refresh'): void
 }>()
 
 const modalVisible = computed({
@@ -42,84 +42,78 @@ const defaultRoom: Room = {
   loaiPhong: undefined,
   gia: undefined,
   sucChua: undefined,
-  trangThai: 'Trống',
+  trangThaiHoatDong: 'Hoạt động',
 }
 
 const formModel = ref<Room>({ ...defaultRoom })
 
 // --- Loại phòng ---
-const loaiPhongOptions = ref<{ label: string, value: string, soLuongNguoiToiDa: number, giaHienTai: number }[]>([])
+const loaiPhongOptions = ref<{ label: string, value: string, soLuongNguoiToiDa: number, giaCaNgay: number }[]>([])
 const isSucChuaLocked = ref(false)
 const isGiaLocked = ref(false)
 
+// --- Trạng thái phòng ---
 const trangThaiOptions = ref([
-  { label: 'Trống', value: 'Trống' },
-  { label: 'Đã đặt', value: 'Đã đặt' },
-  { label: 'Đang sử dụng', value: 'Đang sử dụng' },
-  { label: 'Đang dọn', value: 'Đang dọn' },
-  { label: 'Bảo trì', value: 'Bảo trì' },
-  { label: 'Tạm khóa', value: 'Tạm khóa' },
+  { label: 'Hoạt động', value: 'HOAT_DONG' },
+  { label: 'Bảo trì', value: 'BAO_TRI' },
+  { label: 'Ngưng hoạt động', value: 'NGUNG_HOAT_DONG' },
 ])
 
 function mapTrangThaiPhong(trangThai: string): string {
   switch (trangThai) {
-    case 'Trống': return 'TRONG'
-    case 'Đã đặt': return 'DA_DAT'
-    case 'Đang sử dụng': return 'DANG_SU_DUNG'
-    case 'Đang dọn': return 'DANG_DON'
+    case 'Hoạt động': return 'HOAT_DONG'
     case 'Bảo trì': return 'BAO_TRI'
-    case 'Tạm khóa': return 'TAM_KHOA'
-    default: return 'TRONG'
+    case 'Ngưng hoạt động': return 'NGUNG_HOAT_DONG'
+    default: return 'HOAT_DONG'
   }
 }
 
 function reverseMapTrangThaiPhong(enumValue: string): string {
   switch (enumValue) {
-    case 'TRONG': return 'Trống'
-    case 'DA_DAT': return 'Đã đặt'
-    case 'DANG_SU_DUNG': return 'Đang sử dụng'
-    case 'DANG_DON': return 'Đang dọn'
+    case 'HOAT_DONG': return 'Hoạt động'
     case 'BAO_TRI': return 'Bảo trì'
-    case 'TAM_KHOA': return 'Tạm khóa'
-    default: return 'Trống'
+    case 'NGUNG_HOAT_DONG': return 'Ngưng hoạt động'
+    default: return 'Hoạt động'
   }
 }
 
+// --- Fetch loại phòng ---
 async function fetchLoaiPhong() {
   try {
-    const data = await getAllLoaiPhong()
+    const data = await getRoomTypes()
     loaiPhongOptions.value = data.map(lp => ({
       label: lp.ten,
       value: String(lp.id),
-      soLuongNguoiToiDa: lp.soLuongNguoiToiDa || 0,
-      giaHienTai: lp.giaHienTai || 0,
+      soLuongNguoiToiDa: lp.soLuongNguoiToiDa ?? 1,
+      giaCaNgay: lp.giaCaNgay ?? 0
     }))
-  }
-  catch (err: any) {
+  } catch (err: any) {
     window.$message.error(err.message || 'Không thể tải loại phòng')
   }
 }
 
+// --- Watch loại phòng để tự set giá và sức chứa ---
 watch(
   () => formModel.value.loaiPhong,
   (newLoaiPhong) => {
     if (!newLoaiPhong) {
-      formModel.value.sucChua = undefined
       formModel.value.gia = undefined
-      isSucChuaLocked.value = false
+      formModel.value.sucChua = undefined
       isGiaLocked.value = false
+      isSucChuaLocked.value = false
       return
     }
     const selected = loaiPhongOptions.value.find(lp => lp.value === newLoaiPhong)
     if (selected) {
+      formModel.value.gia = selected.giaCaNgay
       formModel.value.sucChua = selected.soLuongNguoiToiDa
-      formModel.value.gia = selected.giaHienTai
-      isSucChuaLocked.value = true
       isGiaLocked.value = true
+      isSucChuaLocked.value = true
     }
   },
 )
 
+// --- Watch khi modal mở ---
 watch(
   () => props.visible,
   (val) => {
@@ -128,15 +122,14 @@ watch(
       if (props.type === 'edit' && props.modalData) {
         formModel.value = {
           ...props.modalData,
-          trangThai: reverseMapTrangThaiPhong(props.modalData.trangThai),
+          trangThaiHoatDong: reverseMapTrangThaiPhong(props.modalData.trangThaiHoatDong),
         }
-        isSucChuaLocked.value = true
         isGiaLocked.value = true
-      }
-      else {
+        isSucChuaLocked.value = true
+      } else {
         formModel.value = { ...defaultRoom }
-        isSucChuaLocked.value = false
         isGiaLocked.value = false
+        isSucChuaLocked.value = false
       }
     }
   },
@@ -144,9 +137,8 @@ watch(
 
 async function handleSubmit() {
   try {
-    // ⚠️ Kiểm tra dữ liệu trước khi gửi
-    if (!formModel.value.maPhong?.trim() || !formModel.value.tenPhong?.trim()) {
-      window.$message.warning('Vui lòng nhập đầy đủ mã và tên phòng!')
+    if ( !formModel.value.tenPhong?.trim()) {
+      window.$message.warning('Vui lòng nhập đầy đủ tên phòng!')
       return
     }
     if (!formModel.value.loaiPhong) {
@@ -168,30 +160,24 @@ async function handleSubmit() {
       idLoaiPhong: formModel.value.loaiPhong!,
       sucChua: formModel.value.sucChua!,
       tang: formModel.value.tang!,
-      trangThaiPhong: mapTrangThaiPhong(formModel.value.trangThai),
+      trangThaiPhongHoatDong: mapTrangThaiPhong(formModel.value.trangThaiHoatDong),
     }
 
     const res = await addPhong(payload)
 
-    if (res?.message?.includes('Mã phòng này đã tồn tại')) {
-      window.$message.warning('Mã phòng này đã tồn tại!')
-      return
-    }
     if (res?.message?.includes('Tên phòng này đã tồn tại')) {
       window.$message.warning('Tên phòng này đã tồn tại!')
       return
     }
 
     window.$message.success(res?.message || 'Thêm phòng thành công!')
-    emit('refresh') // reload danh sách phòng
+    emit('refresh')
     closeModal()
-
     formModel.value = { ...defaultRoom }
   } catch (error: any) {
     window.$message.error(error.message || 'Không thể thêm phòng')
   }
 }
-
 
 onMounted(fetchLoaiPhong)
 </script>
@@ -208,7 +194,7 @@ onMounted(fetchLoaiPhong)
     <n-form label-placement="left" :model="formModel" label-align="left" :label-width="120">
       <n-grid :cols="24" :x-gap="18">
         <n-form-item-grid-item :span="12" label="Mã phòng" path="maPhong">
-          <n-input v-model:value="formModel.maPhong" placeholder="Nhập mã phòng" />
+          <n-input v-model:value="formModel.maPhong" placeholder="Mã phòng theo tên phòng" disabled />
         </n-form-item-grid-item>
 
         <n-form-item-grid-item :span="12" label="Tên phòng" path="tenPhong">
@@ -247,9 +233,9 @@ onMounted(fetchLoaiPhong)
           />
         </n-form-item-grid-item>
 
-        <n-form-item-grid-item :span="12" label="Trạng thái" path="trangThai">
+        <n-form-item-grid-item :span="12" label="Trạng thái hoạt động" path="trangThaiHoatDong">
           <n-select
-            v-model:value="formModel.trangThai"
+            v-model:value="formModel.trangThaiHoatDong"
             :options="trangThaiOptions"
             label-field="label"
             value-field="value"
@@ -261,12 +247,8 @@ onMounted(fetchLoaiPhong)
 
     <template #action>
       <n-space justify="center">
-        <n-button @click="closeModal">
-          Hủy
-        </n-button>
-        <n-button type="primary" @click="handleSubmit">
-          Lưu
-        </n-button>
+        <n-button @click="closeModal">Hủy</n-button>
+        <n-button type="primary" @click="handleSubmit">Lưu</n-button>
       </n-space>
     </template>
   </n-modal>
