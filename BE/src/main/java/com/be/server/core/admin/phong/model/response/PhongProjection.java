@@ -1,6 +1,5 @@
 package com.be.server.core.admin.phong.model.response;
 
-import com.be.server.core.common.base.IsEntityPhong;
 import com.be.server.core.common.base.IsIdentify;
 
 import java.math.BigDecimal;
