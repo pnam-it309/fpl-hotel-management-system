@@ -17,7 +17,11 @@ import type { PhongResponse } from '@/service/api/letan/phong'
 
 // --- Loading & Modal ---
 const { bool: loading, setTrue: startLoading, setFalse: endLoading } = useBoolean(false)
-const { bool: visible, setTrue: openModal } = useBoolean(false)
+const { bool: visible, setTrue: openModal, setFalse: closeModal } = useBoolean(false)
+
+// --- Modal State ---
+const modalType = ref<'add' | 'edit'>('add')
+const modalData = ref<{ id: string } | null>(null)
 
 // --- Form tìm kiếm ---
 const initialModel = {
@@ -36,19 +40,20 @@ const formRef = ref<FormInst | null>(null)
 
 // --- Options combobox ---
 const tangOptions = [1, 2, 3].map(t => ({ label: `Tầng ${t}`, value: t }))
-// --- Loại phòng fetch từ API ---
 const loaiPhongOptions = ref<{ label: string; value: string }[]>([])
 
 async function fetchLoaiPhong() {
   try {
     const data = await getRoomTypes()
-    loaiPhongOptions.value =  data.map(lp => ({ label: lp.ten, value: lp.id }))
-  } catch (err: any) {
+    loaiPhongOptions.value = data.map(lp => ({ label: lp.ten, value: lp.id }))
+  }
+  catch (err: any) {
     window.$message.error(err.message || 'Không thể tải loại phòng')
   }
 }
+
 const trangThaiOptions = [
-  { label: 'Hoạt đông', value: 'DANG_HOAT_DONG' },
+  { label: 'Hoạt động', value: 'DANG_HOAT_DONG' },
   { label: 'Bảo trì', value: 'DANG_SUA' },
   { label: 'Ngưng hoạt động', value: 'NGUNG_HOAT_DONG' },
 ]
@@ -74,48 +79,56 @@ async function fetchRooms(page = 1) {
       size: pageSize.value,
     }
 
-    if (model.tuKhoa) params.tuKhoa = model.tuKhoa
-    if (model.tang !== null) params.tang = model.tang
-    if (model.loaiPhong) params.loaiPhong = model.loaiPhong
-    if (model.trangThaiHoatDong) params.trangThaiHoatDong = model.trangThaiHoatDong
-    if (model.giaMin !== null) params.giaMin = model.giaMin
-    if (model.giaMax !== null) params.giaMax = model.giaMax
-    if (model.sucChuaMin !== null) params.sucChuaMin = model.sucChuaMin
-    if (model.sucChuaMax !== null) params.sucChuaMax = model.sucChuaMax
+    if (model.tuKhoa)
+      params.tuKhoa = model.tuKhoa
+    if (model.tang !== null)
+      params.tang = model.tang
+    if (model.loaiPhong)
+      params.loaiPhong = model.loaiPhong
+    if (model.trangThaiHoatDong)
+      params.trangThaiHoatDong = model.trangThaiHoatDong
+    if (model.giaMin !== null)
+      params.giaMin = model.giaMin
+    if (model.giaMax !== null)
+      params.giaMax = model.giaMax
+    if (model.sucChuaMin !== null)
+      params.sucChuaMin = model.sucChuaMin
+    if (model.sucChuaMax !== null)
+      params.sucChuaMax = model.sucChuaMax
 
     const res = await getAllRooms(params)
 
-    if (res.items.length === 0 && page === 1) {
+    if (res.items.length === 0 && page === 1)
       errorMessage.value = 'Không có phòng phù hợp với tiêu chí lọc'
-    }
 
     listData.value = res.items
     totalItems.value = res.totalItems
     currentPage.value = res.currentPage
 
-if (sortBy.value) {
-  const key = sortBy.value
-  const order = sortOrder.value
-  listData.value.sort((a: any, b: any) => {
-    const valA = a[key] ?? 0
-    const valB = b[key] ?? 0
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return order === 'asc'
-        ? valA.localeCompare(valB)
+    if (sortBy.value) {
+      const key = sortBy.value
+      const order = sortOrder.value
+      listData.value.sort((a: any, b: any) => {
+        const valA = a[key] ?? 0
+        const valB = b[key] ?? 0
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return order === 'asc'
+            ? valA.localeCompare(valB)
             : valB.localeCompare(valA)
-    }
-    if (typeof valA === 'number' && typeof valB === 'number') {
-      return order === 'asc' ? valA - valB : valB - valA
-    }
-    return 0
-  })
-}
+        }
+        if (typeof valA === 'number' && typeof valB === 'number')
+          return order === 'asc' ? valA - valB : valB - valA
 
-  } catch (error: any) {
+        return 0
+      })
+    }
+  }
+  catch (error: any) {
     errorMessage.value = error.message || 'Không thể tải danh sách phòng'
     window.$message.error(errorMessage.value)
     listData.value = []
-  } finally {
+  }
+  finally {
     endLoading()
   }
 }
@@ -131,11 +144,14 @@ watch(
 
 // --- Hành động ---
 function handleEditTable(row: PhongResponse) {
-  window.$message.info(`Chỉnh sửa phòng: ${row.ten}`)
+  modalType.value = 'edit'
+  modalData.value = { id: row.id }
   openModal()
 }
 
 function handleAddTable() {
+  modalType.value = 'add'
+  modalData.value = null
   openModal()
 }
 
@@ -144,13 +160,14 @@ async function handleDeleteRoom(id: string) {
     const res = await deleteRoom(id)
     window.$message.success(res?.message || 'Xóa phòng thành công!')
     fetchRooms(currentPage.value)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     const msg = error.message || 'Đã xảy ra lỗi khi xóa phòng!'
     window.$message.error(msg)
   }
 }
 
-//Reset toàn bộ filters + reload bảng
+// Reset toàn bộ filters + reload bảng
 function handleResetSearch() {
   Object.assign(model, initialModel)
   sortBy.value = ''
@@ -163,9 +180,9 @@ function changePage(page: number) {
 }
 
 function handleSort(column: string) {
-  if (sortBy.value === column) {
+  if (sortBy.value === column)
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
+  else {
     sortBy.value = column
     sortOrder.value = 'asc'
   }
@@ -173,7 +190,8 @@ function handleSort(column: string) {
 }
 
 function getSortIcon(column: string) {
-  if (sortBy.value !== column) return ''
+  if (sortBy.value !== column)
+    return ''
   return sortOrder.value === 'asc' ? ' ↑' : ' ↓'
 }
 
@@ -242,7 +260,7 @@ const columns: DataTableColumns<PhongResponse> = [
     align: 'center',
     key: 'trangThaiHoatDong',
     render: (row) => {
-      const statusMap: Record<string, { label: string, type: 'success' | 'warning' | 'error' }> = {
+      const statusMap: Record<string, { label: string; type: 'success' | 'warning' | 'error' }> = {
         DANG_HOAT_DONG: { label: 'Hoạt động', type: 'success' },
         DANG_SUA: { label: 'Bảo trì', type: 'warning' },
         NGUNG_HOAT_DONG: { label: 'Ngưng hoạt động', type: 'error' },
@@ -276,88 +294,84 @@ const columns: DataTableColumns<PhongResponse> = [
 
 // --- Mounted ---
 onMounted(() => {
-  fetchRooms(),
+  fetchRooms()
   fetchLoaiPhong()
 })
 </script>
 
-
 <template>
   <NSpace vertical size="large">
-   <n-card>
-  <n-form ref="formRef" :model="model" label-placement="top" :show-feedback="false">
-    <n-grid :cols="24" :x-gap="12" :y-gap="12">
+    <n-card>
+      <n-form ref="formRef" :model="model" label-placement="top" :show-feedback="false">
+        <n-grid :cols="24" :x-gap="12" :y-gap="12">
+          <n-form-item-gi :span="6" label="Mã / Tên phòng" path="tuKhoa">
+            <NInput v-model:value="model.tuKhoa" placeholder="Nhập mã hoặc tên phòng" clearable />
+          </n-form-item-gi>
 
-      <!-- Hàng 1: Thông tin cơ bản -->
-      <n-form-item-gi :span="6" label="Mã / Tên phòng" path="tuKhoa">
-        <NInput v-model:value="model.tuKhoa" placeholder="Nhập mã hoặc tên phòng" clearable />
-      </n-form-item-gi>
+          <n-form-item-gi :span="4" label="Tầng" path="tang">
+            <NSelect v-model:value="model.tang" :options="tangOptions" placeholder="Chọn tầng" clearable />
+          </n-form-item-gi>
 
-      <n-form-item-gi :span="4" label="Tầng" path="tang">
-        <NSelect v-model:value="model.tang" :options="tangOptions" placeholder="Chọn tầng" clearable />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Loại phòng" path="loaiPhong">
+            <NSelect v-model:value="model.loaiPhong" :options="loaiPhongOptions" placeholder="Chọn loại" clearable />
+          </n-form-item-gi>
 
-      <n-form-item-gi :span="6" label="Loại phòng" path="loaiPhong">
-        <NSelect v-model:value="model.loaiPhong" :options="loaiPhongOptions" placeholder="Chọn loại" clearable />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Trạng thái" path="trangThaiHoatDong">
+            <NSelect v-model:value="model.trangThaiHoatDong" :options="trangThaiOptions" placeholder="Chọn" clearable />
+          </n-form-item-gi>
 
-      <n-form-item-gi :span="6" label="Trạng thái" path="trangThaiHoatDong">
-        <NSelect v-model:value="model.trangThaiHoatDong" :options="trangThaiOptions" placeholder="Chọn" clearable />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Giá từ" path="giaMin">
+            <NInputNumber
+              v-model:value="model.giaMin"
+              placeholder="0"
+              :min="0"
+              :show-button="false"
+              clearable
+            />
+          </n-form-item-gi>
 
-      <!-- Hàng 2: Giá phòng -->
-      <n-form-item-gi :span="6" label="Giá từ" path="giaMin">
-        <NInputNumber
-          v-model:value="model.giaMin"
-          placeholder="0"
-          :min="0"
-          :show-button="false"
-          clearable
-        />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Đến" path="giaMax">
+            <NInputNumber
+              v-model:value="model.giaMax"
+              placeholder="0"
+              :min="0"
+              :show-button="false"
+              clearable
+            />
+          </n-form-item-gi>
 
-      <n-form-item-gi :span="6" label="Đến" path="giaMax">
-        <NInputNumber
-          v-model:value="model.giaMax"
-          placeholder="0"
-          :min="0"
-          :show-button="false"
-          clearable
-        />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Sức chứa từ" path="sucChuaMin">
+            <NInputNumber
+              v-model:value="model.sucChuaMin"
+              placeholder="0"
+              :min="0"
+              :show-button="false"
+              clearable
+            />
+          </n-form-item-gi>
 
-      <!-- Hàng 3: Sức chứa -->
-      <n-form-item-gi :span="6" label="Sức chứa từ" path="sucChuaMin">
-        <NInputNumber
-          v-model:value="model.sucChuaMin"
-          placeholder="0"
-          :min="0"
-          :show-button="false"
-          clearable
-        />
-      </n-form-item-gi>
+          <n-form-item-gi :span="6" label="Đến" path="sucChuaMax">
+            <NInputNumber
+              v-model:value="model.sucChuaMax"
+              placeholder="0"
+              :min="0"
+              :show-button="false"
+              clearable
+            />
+          </n-form-item-gi>
 
-      <n-form-item-gi :span="6" label="Đến" path="sucChuaMax">
-        <NInputNumber
-          v-model:value="model.sucChuaMax"
-          placeholder="0"
-          :min="0"
-          :show-button="false"
-          clearable
-        />
-      </n-form-item-gi>
+          <n-gi :span="24" class="flex justify-end gap-3">
+            <NButton type="primary" @click="fetchRooms(1)">
+              Tìm kiếm
+            </NButton>
+            <NButton strong secondary @click="handleResetSearch">
+              Reset
+            </NButton>
+          </n-gi>
+        </n-grid>
+      </n-form>
+    </n-card>
 
-      <!-- Hàng 4: Nút hành động -->
-      <n-gi :span="24" class="flex justify-end gap-3">
-        <NButton type="primary" @click="fetchRooms(1)">Tìm kiếm</NButton>
-        <NButton strong secondary @click="handleResetSearch">Reset</NButton>
-      </n-gi>
-
-    </n-grid>
-  </n-form>
-</n-card>
-
-    <!-- Bảng danh sách -->
     <n-card>
       <NSpace vertical size="large">
         <div class="flex gap-4">
@@ -371,7 +385,6 @@ onMounted(() => {
             Download
           </NButton>
         </div>
-
 
         <n-data-table :columns="columns" :data="listData" :loading="loading" />
 
@@ -391,8 +404,8 @@ onMounted(() => {
 
         <TableModal
           v-model:visible="visible"
-          type="add"
-          :modal-data="null"
+          :type="modalType"
+          :modal-data="modalData"
           @refresh="fetchRooms(currentPage)"
         />
       </NSpace>
