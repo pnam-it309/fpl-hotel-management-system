@@ -2,6 +2,8 @@ package com.be.server.core.admin.phong.service.impl;
 
 import com.be.server.core.admin.phong.model.request.ADPhongSearchRequest;
 import com.be.server.core.admin.phong.model.request.ADSavePhongRequest;
+import com.be.server.core.admin.phong.model.request.ADUpdatePhongRequest;
+import com.be.server.core.admin.phong.model.response.ADPhongDetail;
 import com.be.server.core.admin.phong.repository.ADLoaiPhongRepository;
 import com.be.server.core.admin.phong.repository.ADPhongRepository;
 import com.be.server.core.admin.phong.service.ADPhongService;
@@ -53,7 +55,7 @@ public class ADPhongServiceImpl implements ADPhongService {
 
     }
 
-//    @Override
+    //    @Override
 //    public ResponseObject<?> changeStatusPhong(String id) {
 //        Optional<Phong> existingPhong = adPhongRepository.findById(id);
 //        if (existingPhong.isPresent()) {
@@ -123,5 +125,51 @@ public class ADPhongServiceImpl implements ADPhongService {
     @Override
     public ResponseObject<?> getAllLoaiPhong(){
         return new ResponseObject<>(adLoaiPhongRepository.getAllLoaiPhong() , HttpStatus.OK , "lấy thành công loại phòng");
+    }
+
+    @Override
+    public ResponseObject<?> updatePhong(String id, ADUpdatePhongRequest request) {
+        Optional<Phong> existingPhong = adPhongRepository.findById(id);
+        if (existingPhong.isEmpty()) {
+            return ResponseObject.errorForward("Không tìm thấy phòng có id: " +id, HttpStatus.NOT_FOUND);
+        }
+
+        Phong existingPhong1 = existingPhong.get();
+
+        Optional<Phong> tenOptional = adPhongRepository.findByTen(request.getTen());
+        if (tenOptional.isPresent() && !tenOptional.get().getId().equals(id)) {
+            return ResponseObject.errorForward("Tên phòng đã tồn tại", HttpStatus.CONFLICT);
+        }
+
+        if (request.getTang() < 1  || request.getTang() > 3){
+            return ResponseObject.errorForward("Vị trí phòng không hợp lệ", HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<LoaiPhong> optionalLoaiPhong = adLoaiPhongRepository.findById(request.getIdLoaiPhong());
+        if (optionalLoaiPhong.isEmpty()) {
+            return ResponseObject.errorForward("Không tìm thấy loại phòng", HttpStatus.NOT_FOUND);
+        }
+
+        existingPhong1.setMa(request.getTen());
+        existingPhong1.setTen(request.getTen());
+        existingPhong1.setTang(request.getTang());
+        existingPhong1.setLoaiPhong(optionalLoaiPhong.get());
+        existingPhong1.setTrangThaiHoatDong(request.getTrangThaiPhong());
+
+        adPhongRepository.save(existingPhong1);
+
+        return new ResponseObject<>(null, HttpStatus.OK, "Cập nhật phòng thành công");
+    }
+
+
+    @Override
+    public ResponseObject<?> getPhongById(String id) {
+        Optional<ADPhongDetail> phongDetail = adPhongRepository.getPhongDetailById(id);
+        if(phongDetail.isEmpty()){
+            return ResponseObject.errorForward("Không tìm thấy phòng có id: " + id, HttpStatus.NOT_FOUND);
+        }
+
+
+        return ResponseObject.successForward(phongDetail.get(), "Lấy thông tin phòng thành công");
     }
 }

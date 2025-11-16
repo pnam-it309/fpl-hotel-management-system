@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,4 +18,5 @@ public class ADSavePhongRequest {
     private String idLoaiPhong;
     private Integer tang;
     private TrangThaiHoatDong trangThaiPhong;
+
 }

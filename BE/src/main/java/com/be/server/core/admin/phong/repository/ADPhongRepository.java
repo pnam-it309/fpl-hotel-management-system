@@ -1,6 +1,6 @@
 package com.be.server.core.admin.phong.repository;
 
-
+import com.be.server.core.admin.phong.model.response.ADPhongDetail;
 import com.be.server.core.admin.phong.model.response.PhongProjection;
 import com.be.server.entity.Phong;
 import com.be.server.infrastructure.constant.TrangThaiHoatDong;
@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.Optional;
-
 
 @Repository
 public interface ADPhongRepository extends PhongRepository {
@@ -66,9 +65,24 @@ public interface ADPhongRepository extends PhongRepository {
             Pageable pageable
     );
 
+    @Query("""
+        SELECT
+            p.id AS id,
+            p.ma AS ma,
+            p.ten AS ten,
+            p.tang AS tang,
+            lp.id AS idLoaiPhong,
+            lp.ten AS tenLoaiPhong,
+            lp.soNguoiToiDa AS soNguoiToiDa,
+            lp.giaCaNgay AS giaCaNgay,
+            p.trangThaiHoatDong AS trangThaiHoatDong
+        FROM Phong p
+        LEFT JOIN p.loaiPhong lp
+        WHERE p.id = :id
+    """)
+    Optional<ADPhongDetail> getPhongDetailById(@Param("id") String id);
 
     Optional<Phong> findByMa(String ma);
 
     Optional<Phong> findByTen(String ten);
 }
-
