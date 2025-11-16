@@ -4,19 +4,17 @@ import type { AxiosResponse } from 'axios'
 import type { ResponseList, PaginationParams, DefaultResponse } from '@/typings/api/api.common'
 import request from '@/service/request'
 
-// Tham số truy vấn lọc phòng
 export interface ParamsGetRoom extends PaginationParams {
   tuKhoa?: string
   tang?: number
   loaiPhong?: string
-  trangThaiPhong?: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThai?: 'ACTIVE' | 'INACTIVE'
   giaMin?: number
   giaMax?: number
   sucChuaMin?: number
   sucChuaMax?: number
 }
 
-// Kiểu dữ liệu phòng trả về (projection từ backend)
 export interface PhongResponse extends ResponseList {
   id: string
   ma: string
@@ -25,7 +23,7 @@ export interface PhongResponse extends ResponseList {
   tang: number
   loaiPhong: string
   sucChua: string
-  trangThaiPhong: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThai: 'ACTIVE' | 'INACTIVE'
 }
 
 export interface AddPhongRequest {
@@ -34,7 +32,7 @@ export interface AddPhongRequest {
   idLoaiPhong: string
   sucChua: number
   tang: number
-  trangThaiPhong: 'TRONG' | 'DA_DAT' | 'DANG_SU_DUNG' | 'DANG_DON' | 'BAO_TRI' | 'TAM_KHOA'
+  trangThai: 'ACTIVE' | 'INACTIVE'
 }
 
 export interface LoaiPhongResponse {

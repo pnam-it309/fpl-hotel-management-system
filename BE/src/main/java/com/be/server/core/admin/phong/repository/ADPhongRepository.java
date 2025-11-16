@@ -3,6 +3,7 @@ package com.be.server.core.admin.phong.repository;
 
 import com.be.server.core.admin.phong.model.response.PhongProjection;
 import com.be.server.entity.Phong;
+import com.be.server.infrastructure.constant.EntityStatus;
 import com.be.server.infrastructure.constant.TrangThaiPhong;
 import com.be.server.repository.PhongRepository;
 import org.springframework.data.domain.Page;
@@ -27,13 +28,13 @@ public interface ADPhongRepository extends PhongRepository {
                 p.tang AS tang,
                 lp.ten AS loaiPhong,
                 lp.soNguoiToiDa AS sucChua,
-                p.trangThaiPhong AS trangThaiPhong
+                p.status AS trangThai
             FROM Phong p
             LEFT JOIN p.loaiPhong lp
-            WHERE p.status = 0
-            AND (:tuKhoa IS NULL OR :tuKhoa = '' OR p.ma LIKE %:tuKhoa% OR p.ten LIKE %:tuKhoa%)
+            WHERE
+             (:tuKhoa IS NULL OR :tuKhoa = '' OR p.ma LIKE %:tuKhoa% OR p.ten LIKE %:tuKhoa%)
             AND (:loaiPhong IS NULL OR lp.ten = :loaiPhong)
-            AND (:trangThaiPhong IS NULL OR p.trangThaiPhong = :trangThaiPhong)
+            AND (:trangThai IS NULL OR p.status = :trangThai)
             AND (:giaMin IS NULL OR lp.giaHienTai >= :giaMin)
             AND (:giaMax IS NULL OR lp.giaHienTai <= :giaMax)
             AND (:sucChuaMin IS NULL OR lp.soNguoiToiDa >= :sucChuaMin)
@@ -43,7 +44,7 @@ public interface ADPhongRepository extends PhongRepository {
     Page<PhongProjection> getAllPhong(
             @Param("tuKhoa") String tuKhoa,
             @Param("loaiPhong") String loaiPhong,
-            @Param("trangThaiPhong") TrangThaiPhong trangThaiPhong,
+            @Param("trangThai") EntityStatus trangThai,
             @Param("giaMin") BigDecimal giaMin,
             @Param("giaMax") BigDecimal giaMax,
             @Param("sucChuaMin") Integer sucChuaMin,

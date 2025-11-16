@@ -5,6 +5,10 @@ public enum TrangThaiPhong {
     DA_DAT,
     DANG_SU_DUNG,
     DANG_DON,
+    SACH,
+    CHUA_DON,
+    SAP_NHAN,
+    SAP_TRA,
+    QUA_HAN,
     BAO_TRI,
-    TAM_KHOA,
 }

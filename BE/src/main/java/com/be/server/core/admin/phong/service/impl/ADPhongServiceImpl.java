@@ -40,7 +40,7 @@ public class ADPhongServiceImpl implements ADPhongService {
                 PageableObject.of(adPhongRepository.getAllPhong(
                         request.getTuKhoa(),
                         request.getLoaiPhong(),
-                        request.getTrangThaiPhong() != null ? request.getTrangThaiPhong() : null,
+                        request.getTrangThai() != null ? request.getTrangThai() : null,
                         request.getGiaMin(),
                         request.getGiaMax(),
                         request.getSucChuaMin(),
@@ -75,9 +75,6 @@ public class ADPhongServiceImpl implements ADPhongService {
                 }
                 else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.BAO_TRI)) {
                     return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được bảo trì !");
-                }
-                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.TAM_KHOA)) {
-                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được tạm khóa !");
                 }
             }
             adPhongRepository.save(phong);
