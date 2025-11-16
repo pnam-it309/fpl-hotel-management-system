@@ -36,18 +36,6 @@ public class ADPhongServiceImpl implements ADPhongService {
             request.setPage(1);
         }
 
-        System.out.println(adPhongRepository.getAllPhong(
-                request.getTuKhoa(),
-                request.getLoaiPhong(),
-                request.getTrangThaiHoatDong() != null ? request.getTrangThaiHoatDong() : null,
-                request.getGiaMin(),
-                request.getGiaMax(),
-                request.getSucChuaMin(),
-                request.getSucChuaMax(),
-                request.getTang(),
-                Helper.createPageable(request, "createDate")
-        ));
-
         return ResponseObject.successForward(
                 PageableObject.of(adPhongRepository.getAllPhong(
                         request.getTuKhoa(),

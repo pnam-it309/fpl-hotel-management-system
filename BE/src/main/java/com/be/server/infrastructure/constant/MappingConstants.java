@@ -27,5 +27,7 @@ public class MappingConstants {
 
     public static final String API_LE_TAN_LOAI_PHONG = API_LE_TAN_PREFIX + "/loai-phong";
 
+    public static final String API_LE_TAN_SO_DO_PHONG = API_LE_TAN_PREFIX + "/so-do-phong";
+
 
 }

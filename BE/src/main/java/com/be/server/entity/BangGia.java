@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+//Lịch sử giá của Phòng và Loại phòng
 @Getter
 @Setter
 @Entity
@@ -30,7 +31,7 @@ public class BangGia extends PrimaryEntity implements Serializable {
     @Column(name = "ngay_ket_thuc")
     private LocalDateTime ngayKetThuc;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "phong_id")
     private Phong phong;
 }
