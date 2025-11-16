@@ -5,7 +5,7 @@ import com.be.server.core.common.base.IsIdentify;
 
 import java.math.BigDecimal;
 
-public interface PhongProjection extends IsIdentify, IsEntityPhong {
+public interface PhongProjection extends IsIdentify{
 
     String getMa();
 
@@ -18,5 +18,7 @@ public interface PhongProjection extends IsIdentify, IsEntityPhong {
     String getLoaiPhong();
 
     String getSucChua();
+
+    String getTrangThai();
 
 }

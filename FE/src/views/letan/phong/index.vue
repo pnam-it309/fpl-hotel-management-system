@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { NIcon } from 'naive-ui'
+import { RepeatOutline } from '@vicons/ionicons5'
 import { h, onMounted, reactive, ref, watch } from 'vue'
 import type { DataTableColumns, FormInst } from 'naive-ui'
 import { useBoolean } from '@/hooks'
@@ -10,6 +12,7 @@ import {
   NSelect,
   NSpace,
   NTag,
+  NTooltip
 } from 'naive-ui'
 import TableModal from './components/TableModal.vue'
 import { deleteRoom, getAllRooms } from '@/service/api/letan/phong'
@@ -24,7 +27,7 @@ const initialModel = {
   tuKhoa: '',
   tang: null as number | null,
   loaiPhong: null as string | null,
-  trangThaiPhong: null as string | null,
+  trangThai: null as string | null,
   giaMin: null as number | null,
   giaMax: null as number | null,
   sucChuaMin: null as number | null,
@@ -42,12 +45,8 @@ const loaiPhongOptions = [
   { label: 'Phòng 1 giường đôi 1 giường đơn', value: 'Phòng 1 giường đôi 1 giường đơn' },
 ]
 const trangThaiOptions = [
-  { label: 'Trống', value: 'TRONG' },
-  { label: 'Đã đặt', value: 'DA_DAT' },
-  { label: 'Đang sử dụng', value: 'DANG_SU_DUNG' },
-  { label: 'Đang dọn', value: 'DANG_DON' },
-  { label: 'Bảo trì', value: 'BAO_TRI' },
-  { label: 'Tạm khóa', value: 'TAM_KHOA' },
+  { label: 'Đang hoạt động', value: 'ACTIVE' },
+  { label: 'Ngừng hoạt động', value: 'INACTIVE' },
 ]
 
 // --- Dữ liệu bảng ---
@@ -74,7 +73,7 @@ async function fetchRooms(page = 1) {
     if (model.tuKhoa) params.tuKhoa = model.tuKhoa
     if (model.tang !== null) params.tang = model.tang
     if (model.loaiPhong) params.loaiPhong = model.loaiPhong
-    if (model.trangThaiPhong) params.trangThaiPhong = model.trangThaiPhong
+    if (model.trangThai) params.trangThai = model.trangThai
     if (model.giaMin !== null) params.giaMin = model.giaMin
     if (model.giaMax !== null) params.giaMax = model.giaMax
     if (model.sucChuaMin !== null) params.sucChuaMin = model.sucChuaMin
@@ -90,23 +89,23 @@ async function fetchRooms(page = 1) {
     totalItems.value = res.totalItems
     currentPage.value = res.currentPage
 
-if (sortBy.value) {
-  const key = sortBy.value
-  const order = sortOrder.value
-  listData.value.sort((a: any, b: any) => {
-    const valA = a[key] ?? 0
-    const valB = b[key] ?? 0
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return order === 'asc'
-        ? valA.localeCompare(valB)
+    if (sortBy.value) {
+      const key = sortBy.value
+      const order = sortOrder.value
+      listData.value.sort((a: any, b: any) => {
+        const valA = a[key] ?? 0
+        const valB = b[key] ?? 0
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return order === 'asc'
+            ? valA.localeCompare(valB)
             : valB.localeCompare(valA)
+        }
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return order === 'asc' ? valA - valB : valB - valA
+        }
+        return 0
+      })
     }
-    if (typeof valA === 'number' && typeof valB === 'number') {
-      return order === 'asc' ? valA - valB : valB - valA
-    }
-    return 0
-  })
-}
 
   } catch (error: any) {
     errorMessage.value = error.message || 'Không thể tải danh sách phòng'
@@ -237,17 +236,13 @@ const columns: DataTableColumns<PhongResponse> = [
   {
     title: 'Trạng thái phòng',
     align: 'center',
-    key: 'trangThaiPhong',
+    key: 'trangThai',
     render: (row) => {
-      const statusMap: Record<string, { label: string, type: 'success' | 'warning' | 'error' | 'info' }> = {
-        TRONG: { label: 'Trống', type: 'success' },
-        DA_DAT: { label: 'Đã đặt', type: 'warning' },
-        DANG_SU_DUNG: { label: 'Đang sử dụng', type: 'error' },
-        DANG_DON: { label: 'Đang dọn', type: 'info' },
-        BAO_TRI: { label: 'Bảo trì', type: 'warning' },
-        TAM_KHOA: { label: 'Tạm khóa', type: 'error' },
+      const statusMap: Record<string, { label: string, type: 'success' | 'error' }> = {
+        ACTIVE: { label: 'Đang hoạt động', type: 'success' },
+        INACTIVE: { label: 'Ngừng hoạt động', type: 'error' },
       }
-      const status = statusMap[row.trangThaiPhong] || { label: row.trangThaiPhong, type: 'info' }
+      const status = statusMap[row.trangThai] || { label: row.trangThai, type: 'info' }
       return h(NTag, { type: status.type }, { default: () => status.label })
     },
   },
@@ -263,11 +258,40 @@ const columns: DataTableColumns<PhongResponse> = [
             { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
             { default: () => 'Sửa' },
           ),
-          h(NPopconfirm, { onPositiveClick: () => handleDeleteRoom(row.id) }, {
-            default: () => 'Xác nhận xóa phòng?',
-            trigger: () =>
-              h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' }),
-          }),
+          h(
+            NPopconfirm,
+            { onPositiveClick: () => handleDeleteRoom(row.id) },
+            {
+              default: () => 'Xác nhận chuyển trạng thái phòng?',
+              trigger: () =>
+                h(
+                  NTooltip,
+                  { placement: 'top' },
+                  {
+                    trigger: () =>
+                      h(
+                        NButton,
+                        {
+                          size: 'small',
+                          circle: true,
+                          type: row.trangThai === 'ACTIVE' ? 'warning' : 'success',
+                          quaternary: true,
+                        },
+                        {
+                          default: () =>
+                            h(
+                              NIcon,
+                              { size: 20 },
+                              { default: () => h(RepeatOutline) }
+                            )
+                        }
+                      ),
+                    default: () => 'Chuyển trạng thái phòng'
+                  }
+                )
+            }
+          )
+
         ],
       }),
   },
@@ -287,78 +311,35 @@ onMounted(() => {
       <n-form ref="formRef" :model="model" label-placement="left" :show-feedback="false">
         <n-grid :cols="24" :x-gap="12" :y-gap="8">
           <n-form-item-gi :span="5" label="Mã / Tên phòng" path="tuKhoa">
-            <NInput
-              v-model:value="model.tuKhoa"
-              placeholder="Nhập mã hoặc tên phòng"
-              clearable
-            />
+            <NInput v-model:value="model.tuKhoa" placeholder="Nhập mã hoặc tên phòng" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="3" label="Tầng" path="tang">
-            <NSelect
-              v-model:value="model.tang"
-              :options="tangOptions"
-              placeholder="Chọn tầng"
-              clearable
-            />
+            <NSelect v-model:value="model.tang" :options="tangOptions" placeholder="Chọn tầng" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="5" label="Loại phòng" path="loaiPhong">
-            <NSelect
-              v-model:value="model.loaiPhong"
-              :options="loaiPhongOptions"
-              placeholder="Chọn loại"
-              clearable
-            />
+            <NSelect v-model:value="model.loaiPhong" :options="loaiPhongOptions" placeholder="Chọn loại" clearable />
           </n-form-item-gi>
 
-          <n-form-item-gi :span="4" label="Trạng thái" path="trangThaiPhong">
-            <NSelect
-              v-model:value="model.trangThaiPhong"
-              :options="trangThaiOptions"
-              placeholder="Chọn"
-              clearable
-            />
+          <n-form-item-gi :span="4" label="Trạng thái" path="trangThai">
+            <NSelect v-model:value="model.trangThai" :options="trangThaiOptions" placeholder="Chọn" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="3" label="Giá từ" path="giaMin">
-            <NInputNumber
-              v-model:value="model.giaMin"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.giaMin" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="3" label="Đến" path="giaMax">
-            <NInputNumber
-              v-model:value="model.giaMax"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.giaMax" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="3" label="Sức chứa từ" path="sucChuaMin">
-            <NInputNumber
-              v-model:value="model.sucChuaMin"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.sucChuaMin" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="3" label="Đến" path="sucChuaMax">
-            <NInputNumber
-              v-model:value="model.sucChuaMax"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.sucChuaMax" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-gi :span="24" class="flex justify-end">
@@ -389,26 +370,15 @@ onMounted(() => {
 
         <n-data-table :columns="columns" :data="listData" :loading="loading" />
 
-        <n-pagination
-          v-model:page="currentPage"
-          :page-count="Math.ceil(totalItems / pageSize)"
-          :page-size="pageSize"
-          show-size-picker
-          :page-sizes="[10, 20, 30, 50]"
-          @update:page="changePage"
-          @update:page-size="(size: number) => { pageSize = size; fetchRooms(1) }"
-        >
+        <n-pagination v-model:page="currentPage" :page-count="Math.ceil(totalItems / pageSize)" :page-size="pageSize"
+          show-size-picker :page-sizes="[10, 20, 30, 50]" @update:page="changePage"
+          @update:page-size="(size: number) => { pageSize = size; fetchRooms(1) }">
           <template #prefix>
             Tổng {{ totalItems }} phòng
           </template>
         </n-pagination>
 
-        <TableModal
-          v-model:visible="visible"
-          type="add"
-          :modal-data="null"
-          @refresh="fetchRooms(currentPage)"
-        />
+        <TableModal v-model:visible="visible" type="add" :modal-data="null" @refresh="fetchRooms(currentPage)" />
       </NSpace>
     </n-card>
   </NSpace>
