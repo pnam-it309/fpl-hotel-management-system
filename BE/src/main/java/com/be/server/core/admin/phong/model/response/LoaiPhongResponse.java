@@ -11,15 +11,15 @@ import java.math.BigDecimal;
 @Setter
 public class LoaiPhongResponse {
     private String id;
-    private BigDecimal giaHienTai;
+    private BigDecimal giaCaNgay;
     private Integer soLuongNguoiToiDa;
     private String ten;
 
     public LoaiPhongResponse(String id , Integer soLuongNguoiToiDa,
-                             BigDecimal giaHienTai , String ten) {
+                             BigDecimal giaCaNgay , String ten) {
         this.id = id;
         this.soLuongNguoiToiDa = soLuongNguoiToiDa;
-        this.giaHienTai = giaHienTai;
+        this.giaCaNgay = giaCaNgay;
         this.ten = ten;
     }
 }
