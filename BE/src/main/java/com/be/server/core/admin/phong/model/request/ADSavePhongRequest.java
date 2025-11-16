@@ -1,7 +1,6 @@
 package com.be.server.core.admin.phong.model.request;
 
 import com.be.server.infrastructure.constant.TrangThaiHoatDong;
-import com.be.server.infrastructure.constant.TrangThaiPhong;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

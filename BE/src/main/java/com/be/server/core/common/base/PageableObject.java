@@ -1,5 +1,6 @@
 package com.be.server.core.common.base;
 
+import com.be.server.core.admin.datphong.trangthaiphong.model.response.SoDoPhongResponse;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
 
@@ -13,8 +14,9 @@ public class PageableObject<T> {
 
     private final int currentPage;
 
-    private final long totalElements;
+    private final long totalElements;;
 
+    // Constructor nhận Page
     public PageableObject(Page<T> page) {
         this.data = page.getContent();
         this.totalPages = page.getTotalPages();
@@ -22,8 +24,19 @@ public class PageableObject<T> {
         this.totalElements = page.getTotalElements();
     }
 
-    public static <T> PageableObject<T> of(Page<T> page) {
-        return new PageableObject<>(page);
+    // Constructor nhận List + page info
+    public PageableObject(List<T> data, int currentPage, long totalPages, long totalElements) {
+        this.data = data;
+        this.currentPage = currentPage;
+        this.totalPages = totalPages;
+        this.totalElements = totalElements;
     }
 
+    public static <T> PageableObject<T> of(Page<?> page) {
+        return new PageableObject<>((Page<T>) page);
+    }
+
+    public static <T> PageableObject<T> of(List<T> data, int currentPage, long totalPages, long totalElements) {
+        return new PageableObject<>(data, currentPage, totalPages, totalElements);
+    }
 }
