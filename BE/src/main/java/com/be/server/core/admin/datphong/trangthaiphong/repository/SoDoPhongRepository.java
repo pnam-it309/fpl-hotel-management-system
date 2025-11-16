@@ -1,0 +1,57 @@
+package com.be.server.core.admin.datphong.trangthaiphong.repository;
+
+import com.be.server.core.admin.datphong.trangthaiphong.model.response.SoDoPhongResponse;
+import com.be.server.entity.Phong;
+import com.be.server.repository.PhongRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+
+
+import com.be.server.core.admin.datphong.trangthaiphong.model.response.SoDoPhongResponse;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface SoDoPhongRepository extends JpaRepository<Phong, String> {
+
+    @Query(value = """
+        SELECT 
+            p.id AS id,
+            p.ma AS ma,
+            p.ten AS ten,
+            lp.ten AS loaiPhong,
+            p.tang AS tang,
+            p.trang_thai_hoat_dong AS trangThaiHoatDong,
+            lp.so_nguoi_toi_da AS sucChua,
+            (
+                SELECT bg.gia_ap_dung 
+                FROM bang_gia bg
+                WHERE bg.phong_id = p.id
+                AND :now BETWEEN bg.ngay_bat_dau AND bg.ngay_ket_thuc
+                ORDER BY bg.ngay_bat_dau DESC
+                LIMIT 1
+            ) AS price
+        FROM phong p
+        LEFT JOIN loai_phong lp ON lp.id = p.loai_phong_id
+        WHERE (:ma IS NULL OR p.ma LIKE CONCAT('%', :ma, '%'))
+          AND (:ten IS NULL OR p.ten LIKE CONCAT('%', :ten, '%'))
+          AND (:loaiPhong IS NULL OR lp.ten = :loaiPhong)
+          AND (:tang IS NULL OR p.tang = :tang)
+        """,
+            nativeQuery = true)
+    List<SoDoPhongResponse> getRoomOverview(
+            @Param("ma") String ma,
+            @Param("ten") String ten,
+            @Param("loaiPhong") String loaiPhong,
+            @Param("tang") Integer tang,
+            @Param("now") Long now
+    );
+}
