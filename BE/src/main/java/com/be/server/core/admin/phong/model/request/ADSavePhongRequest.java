@@ -18,5 +18,6 @@ public class ADSavePhongRequest {
     private String idLoaiPhong;
     private Integer tang;
     private TrangThaiHoatDong trangThaiPhong;
+    private List<String> tagIds;
 
 }

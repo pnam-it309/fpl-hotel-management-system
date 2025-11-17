@@ -1,10 +1,15 @@
 package com.be.server.core.common.base;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 @Getter
+@Setter
+@AllArgsConstructor
 public class PageableObject<T> {
 
     private final List<T> data;
