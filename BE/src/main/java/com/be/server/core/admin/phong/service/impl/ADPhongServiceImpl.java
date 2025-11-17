@@ -4,32 +4,23 @@ import com.be.server.core.admin.phong.model.request.ADPhongSearchRequest;
 import com.be.server.core.admin.phong.model.request.ADSavePhongRequest;
 import com.be.server.core.admin.phong.model.request.ADUpdatePhongRequest;
 import com.be.server.core.admin.phong.model.response.ADPhongDetail;
-import com.be.server.core.admin.phong.model.response.PhongProjection;
-import com.be.server.core.admin.phong.model.response.PhongResponse;
 import com.be.server.core.admin.phong.repository.ADLoaiPhongRepository;
 import com.be.server.core.admin.phong.repository.ADPhongRepository;
-import com.be.server.core.admin.phong.repository.ADPhongTagRepository;
-import com.be.server.core.admin.phong.repository.ADTagRepository;
 import com.be.server.core.admin.phong.service.ADPhongService;
+import com.be.server.core.common.base.PageableObject;
 import com.be.server.core.common.base.ResponseObject;
 import com.be.server.entity.LoaiPhong;
 import com.be.server.entity.Phong;
-import com.be.server.entity.PhongTag;
-import com.be.server.entity.Tag;
 import com.be.server.infrastructure.constant.*;
 import com.be.server.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +28,8 @@ import java.util.Optional;
 public class ADPhongServiceImpl implements ADPhongService {
 
     private final ADPhongRepository adPhongRepository;
+
     private final ADLoaiPhongRepository adLoaiPhongRepository;
-    private final ADPhongTagRepository adPhongTagRepository;
-    private final ADTagRepository adTagRepository;
 
     @Override
     public ResponseObject<?> getAllPhong(ADPhongSearchRequest request) {
@@ -48,67 +38,60 @@ public class ADPhongServiceImpl implements ADPhongService {
             request.setPage(1);
         }
 
-        Page<PhongProjection> page = adPhongRepository.getAllPhong(
-                request.getTuKhoa(),
-                request.getLoaiPhong(),
-                request.getTrangThaiHoatDong() != null ? request.getTrangThaiHoatDong() : null,
-                request.getGiaMin(),
-                request.getGiaMax(),
-                request.getSucChuaMin(),
-                request.getSucChuaMax(),
-                request.getTang(),
-                request.getTagIds(),
-                Helper.createPageable(request, "createDate")
+        return ResponseObject.successForward(
+                PageableObject.of(adPhongRepository.getAllPhong(
+                        request.getTuKhoa(),
+                        request.getLoaiPhong(),
+                        request.getTrangThaiHoatDong() != null ? request.getTrangThaiHoatDong() : null,
+                        request.getGiaMin(),
+                        request.getGiaMax(),
+                        request.getSucChuaMin(),
+                        request.getSucChuaMax(),
+                        request.getTang(),
+                        Helper.createPageable(request, "createDate")
+                )),
+                "Lấy danh sách thành công"
         );
 
-        List<String> phongIds = page.getContent().stream()
-                .map(PhongProjection::getId)
-                .toList();
-
-        Map<String, List<PhongResponse.TagInfo>> tagsByPhongId = new HashMap<>();
-        if (!phongIds.isEmpty()) {
-            List<Phong> phongsWithTags = adPhongRepository.findAllWithTagsByIds(phongIds);
-            for (Phong phong : phongsWithTags) {
-                List<PhongResponse.TagInfo> tags = phong.getTags().stream()
-                        .filter(pt -> pt.getTag() != null && pt.getTag().getStatus() == EntityStatus.ACTIVE)
-                        .map(pt -> new PhongResponse.TagInfo(
-                                pt.getTag().getId(),
-                                pt.getTag().getMa(),
-                                pt.getTag().getTen()
-                        ))
-                        .toList();
-                tagsByPhongId.put(phong.getId(), tags);
-            }
-        }
-
-        List<PhongResponse> phongResponses = page.getContent().stream()
-                .map(p -> {
-                    PhongResponse pr = new PhongResponse();
-                    pr.setId(p.getId());
-                    pr.setMa(p.getMa());
-                    pr.setTen(p.getTen());
-                    pr.setPrice(p.getPrice());
-                    pr.setTang(p.getTang());
-                    pr.setLoaiPhong(p.getLoaiPhong());
-                    pr.setSucChua(p.getSucChua());
-                    pr.setTrangThaiHoatDong(TrangThaiHoatDong.valueOf(p.getTrangThaiHoatDong()));
-                    pr.setTags(tagsByPhongId.getOrDefault(p.getId(), new ArrayList<>()));
-                    return pr;
-                })
-                .toList();
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("data", phongResponses);
-        result.put("totalPages", page.getTotalPages());
-        result.put("currentPage", page.getNumber() + 1);
-        result.put("totalElements", page.getTotalElements());
-
-        return ResponseObject.successForward(result, "Lấy danh sách thành công");
     }
 
+    //    @Override
+//    public ResponseObject<?> changeStatusPhong(String id) {
+//        Optional<Phong> existingPhong = adPhongRepository.findById(id);
+//        if (existingPhong.isPresent()) {
+//            Phong phong = existingPhong.get();
+//            if (phong.getStatus().equals(EntityStatus.INACTIVE)) {
+//                phong.setStatus(EntityStatus.ACTIVE);
+//            } else {
+//                if(phong.getTrangThaiPhong().equals(TrangThaiPhong.TRONG)) {
+//                    phong.setStatus(EntityStatus.INACTIVE);
+//                }
+//                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DANG_SU_DUNG)) {
+//                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được sử dụng!");
+//                }
+//                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DA_DAT)) {
+//                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đã được đặt!");
+//                }
+//                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.DANG_DON)) {
+//                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được dọn !");
+//                }
+//                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.BAO_TRI)) {
+//                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được bảo trì !");
+//                }
+//                else if (phong.getTrangThaiPhong().equals(TrangThaiPhong.TAM_KHOA)) {
+//                    return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng, phòng đang được tạm khóa !");
+//                }
+//            }
+//            adPhongRepository.save(phong);
+//            return new ResponseObject<>(null, HttpStatus.OK, "Xóa phòng thành công!");
+//        }
+//        return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Phòng không tồn tại!");
+//
+//    }
+//
     @Override
-    @Transactional
     public ResponseObject<?> savePhong(ADSavePhongRequest phong) {
+
 
         Optional<Phong> tenOptional = adPhongRepository.findByTen(phong.getTen());
         if (tenOptional.isPresent()) {
@@ -134,19 +117,7 @@ public class ADPhongServiceImpl implements ADPhongService {
         addPhong.setTrangThaiHoatDong(TrangThaiHoatDong.DANG_HOAT_DONG);
         addPhong.setLoaiPhong(loaiPhong);
 
-        Phong savedPhong = adPhongRepository.save(addPhong);
-
-        if (phong.getTagIds() != null && !phong.getTagIds().isEmpty()) {
-            for (String tagId : phong.getTagIds()) {
-                Optional<Tag> tagOptional = adTagRepository.findById(tagId);
-                if (tagOptional.isPresent()) {
-                    PhongTag phongTag = new PhongTag();
-                    phongTag.setPhong(savedPhong);
-                    phongTag.setTag(tagOptional.get());
-                    adPhongTagRepository.save(phongTag);
-                }
-            }
-        }
+        adPhongRepository.save(addPhong);
 
         return new ResponseObject<>(null, HttpStatus.OK, "Thêm phòng thành công");
     }
@@ -157,7 +128,6 @@ public class ADPhongServiceImpl implements ADPhongService {
     }
 
     @Override
-    @Transactional
     public ResponseObject<?> updatePhong(String id, ADUpdatePhongRequest request) {
         Optional<Phong> existingPhong = adPhongRepository.findById(id);
         if (existingPhong.isEmpty()) {
@@ -188,21 +158,9 @@ public class ADPhongServiceImpl implements ADPhongService {
 
         adPhongRepository.save(existingPhong1);
 
-        adPhongTagRepository.deleteByPhongId(id);
-        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            for (String tagId : request.getTagIds()) {
-                Optional<Tag> tagOptional = adTagRepository.findById(tagId);
-                if (tagOptional.isPresent()) {
-                    PhongTag phongTag = new PhongTag();
-                    phongTag.setPhong(existingPhong1);
-                    phongTag.setTag(tagOptional.get());
-                    adPhongTagRepository.save(phongTag);
-                }
-            }
-        }
-
         return new ResponseObject<>(null, HttpStatus.OK, "Cập nhật phòng thành công");
     }
+
 
     @Override
     public ResponseObject<?> getPhongById(String id) {
@@ -211,21 +169,7 @@ public class ADPhongServiceImpl implements ADPhongService {
             return ResponseObject.errorForward("Không tìm thấy phòng có id: " + id, HttpStatus.NOT_FOUND);
         }
 
-        List<Object[]> tagData = adPhongRepository.getTagsByPhongId(id);
-        List<String> tagIds = new ArrayList<>();
-        for (Object[] row : tagData) {
-            tagIds.add((String) row[0]);
-        }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("phong", phongDetail.get());
-        result.put("tagIds", tagIds);
-
-        return ResponseObject.successForward(result, "Lấy thông tin phòng thành công");
-    }
-
-    @Override
-    public ResponseObject<?> getAllTags() {
-        return new ResponseObject<>(adTagRepository.getAllActiveTags(), HttpStatus.OK, "Lấy thành công danh sách tags");
+        return ResponseObject.successForward(phongDetail.get(), "Lấy thông tin phòng thành công");
     }
 }

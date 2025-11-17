@@ -12,6 +12,9 @@ import java.util.List;
 @Repository
 public interface ADPhongTagRepository extends PhongTagRepository {
 
+    @Query("SELECT pt FROM PhongTag pt WHERE pt.phong.id = :phongId")
+    List<PhongTag> findByPhongId(@Param("phongId") String phongId);
+
     @Modifying
     @Query("DELETE FROM PhongTag pt WHERE pt.phong.id = :phongId")
     void deleteByPhongId(@Param("phongId") String phongId);

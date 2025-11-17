@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineEmits, defineProps, onMounted, ref, watch } from 'vue'
-import { addPhong, getAllTags, getPhongById, getRoomTypes, updatePhong } from '@/service/api/letan/phong'
+import { addPhong, getPhongById, getRoomTypes, updatePhong } from '@/service/api/letan/phong'
 
 interface Room {
   id?: string
@@ -11,7 +11,6 @@ interface Room {
   gia?: number
   sucChua?: number
   trangThaiHoatDong: string
-  tags?: string[]
 }
 
 interface Props {
@@ -45,24 +44,50 @@ const defaultRoom: Room = {
   gia: undefined,
   sucChua: undefined,
   trangThaiHoatDong: 'DANG_HOAT_DONG',
-  tags: [],
 }
 
 const formModel = ref<Room>({ ...defaultRoom })
 const isLoading = ref(false)
 
+// --- Loại phòng ---
 const loaiPhongOptions = ref<{ label: string; value: string; soLuongNguoiToiDa: number; giaCaNgay: number }[]>([])
 const isSucChuaLocked = ref(false)
 const isGiaLocked = ref(false)
 
-const tagOptions = ref<{ label: string; value: string }[]>([])
-
+// --- Trạng thái phòng ---
 const trangThaiOptions = ref([
   { label: 'Hoạt động', value: 'DANG_HOAT_DONG' },
   { label: 'Bảo trì', value: 'DANG_SUA' },
   { label: 'Ngưng hoạt động', value: 'NGUNG_HOAT_DONG' },
 ])
 
+function mapTrangThaiPhong(trangThai: string): string {
+  switch (trangThai) {
+    case 'Hoạt động':
+      return 'DANG_HOAT_DONG'
+    case 'Bảo trì':
+      return 'DANG_SUA'
+    case 'Ngưng hoạt động':
+      return 'NGUNG_HOAT_DONG'
+    default:
+      return 'DANG_HOAT_DONG'
+  }
+}
+
+function reverseMapTrangThaiPhong(enumValue: string): string {
+  switch (enumValue) {
+    case 'DANG_HOAT_DONG':
+      return 'Hoạt động'
+    case 'DANG_SUA':
+      return 'Bảo trì'
+    case 'NGUNG_HOAT_DONG':
+      return 'Ngưng hoạt động'
+    default:
+      return 'Hoạt động'
+  }
+}
+
+// --- Fetch loại phòng ---
 async function fetchLoaiPhong() {
   try {
     const data = await getRoomTypes()
@@ -78,34 +103,21 @@ async function fetchLoaiPhong() {
   }
 }
 
-async function fetchTags() {
-  try {
-    const data = await getAllTags()
-    tagOptions.value = data.map(tag => ({
-      label: tag.ten,
-      value: tag.id,
-    }))
-  }
-  catch (err: any) {
-    window.$message.error(err.message || 'Không thể tải danh sách tags')
-  }
-}
-
+// --- Fetch phòng detail khi edit ---
 async function fetchPhongDetail(id: string) {
   try {
     isLoading.value = true
     const data = await getPhongById(id)
 
     formModel.value = {
-      id: data.phong.id,
-      maPhong: data.phong.ma,
-      tenPhong: data.phong.ten,
-      tang: data.phong.tang,
-      loaiPhong: data.phong.idLoaiPhong,
-      gia: data.phong.giaCaNgay,
-      sucChua: data.phong.soNguoiToiDa,
-      trangThaiHoatDong: data.phong.trangThaiHoatDong,
-      tags: data.tagIds || [],
+      id: data.id,
+      maPhong: data.ma,
+      tenPhong: data.ten,
+      tang: data.tang,
+      loaiPhong: data.idLoaiPhong,
+      gia: data.giaCaNgay,
+      sucChua: data.soNguoiToiDa,
+      trangThaiHoatDong: data.trangThaiHoatDong,
     }
 
     isGiaLocked.value = true
@@ -119,6 +131,7 @@ async function fetchPhongDetail(id: string) {
   }
 }
 
+// --- Watch loại phòng để tự set giá và sức chứa ---
 watch(
   () => formModel.value.loaiPhong,
   (newLoaiPhong) => {
@@ -139,6 +152,7 @@ watch(
   },
 )
 
+// --- Watch tên phòng để auto-fill mã phòng ---
 watch(
   () => formModel.value.tenPhong,
   (newTen) => {
@@ -146,12 +160,12 @@ watch(
   },
 )
 
+// --- Watch khi modal mở ---
 watch(
   () => props.visible,
   (val) => {
     if (val) {
       fetchLoaiPhong()
-      fetchTags()
       if (props.type === 'edit' && props.modalData?.id) {
         fetchPhongDetail(props.modalData.id)
       }
@@ -189,21 +203,20 @@ async function handleSubmit() {
 
   try {
     if (props.type === 'edit' && formModel.value.id) {
-
+      // Update
       const payload = {
         ma: formModel.value.maPhong.trim(),
         ten: formModel.value.tenPhong.trim(),
         idLoaiPhong: formModel.value.loaiPhong!,
         tang: formModel.value.tang!,
         trangThaiPhong: formModel.value.trangThaiHoatDong,
-        tagIds: formModel.value.tags || [],
       }
 
       const res = await updatePhong(formModel.value.id, payload)
       window.$message.success(res?.message || 'Cập nhật phòng thành công!')
     }
     else {
-      
+      // Add
       const payload = {
         ma: formModel.value.maPhong.trim(),
         ten: formModel.value.tenPhong.trim(),
@@ -211,7 +224,6 @@ async function handleSubmit() {
         sucChua: formModel.value.sucChua!,
         tang: formModel.value.tang!,
         trangThaiHoatDong: formModel.value.trangThaiHoatDong,
-        tagIds: formModel.value.tags || [],
       }
 
       const res = await addPhong(payload)
@@ -233,10 +245,7 @@ async function handleSubmit() {
   }
 }
 
-onMounted(() => {
-  fetchLoaiPhong()
-  fetchTags()
-})
+onMounted(fetchLoaiPhong)
 </script>
 
 <template>
@@ -300,18 +309,6 @@ onMounted(() => {
               label-field="label"
               value-field="value"
               placeholder="Chọn trạng thái"
-            />
-          </n-form-item-grid-item>
-
-          <n-form-item-grid-item :span="24" label="Tags" path="tags">
-            <n-select
-              v-model:value="formModel.tags"
-              :options="tagOptions"
-              label-field="label"
-              value-field="value"
-              placeholder="Chọn tags"
-              multiple
-              filterable
             />
           </n-form-item-grid-item>
         </n-grid>
