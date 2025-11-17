@@ -35,6 +35,7 @@ public class ADPhongSearchRequest extends PageableRequest {
 
     private Integer sucChuaMax;
 
+    private List<String> tagIds;
 
 
 }
