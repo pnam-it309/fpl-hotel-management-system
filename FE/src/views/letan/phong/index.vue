@@ -12,15 +12,18 @@ import {
   NTag,
 } from 'naive-ui'
 import TableModal from './components/TableModal.vue'
-import { deleteRoom, getAllRooms, getAllTags, getRoomTypes } from '@/service/api/letan/phong'
+import { deleteRoom, getAllRooms, getRoomTypes } from '@/service/api/letan/phong'
 import type { PhongResponse } from '@/service/api/letan/phong'
 
+// --- Loading & Modal ---
 const { bool: loading, setTrue: startLoading, setFalse: endLoading } = useBoolean(false)
 const { bool: visible, setTrue: openModal, setFalse: closeModal } = useBoolean(false)
 
+// --- Modal State ---
 const modalType = ref<'add' | 'edit'>('add')
 const modalData = ref<{ id: string } | null>(null)
 
+// --- Form tìm kiếm ---
 const initialModel = {
   tuKhoa: '',
   tang: null as number | null,
@@ -30,15 +33,14 @@ const initialModel = {
   giaMax: null as number | null,
   sucChuaMin: null as number | null,
   sucChuaMax: null as number | null,
-  tagIds: [] as string[],
 }
 
 const model = reactive({ ...initialModel })
 const formRef = ref<FormInst | null>(null)
 
+// --- Options combobox ---
 const tangOptions = [1, 2, 3].map(t => ({ label: `Tầng ${t}`, value: t }))
 const loaiPhongOptions = ref<{ label: string; value: string }[]>([])
-const tagOptions = ref<{ label: string; value: string }[]>([])
 
 async function fetchLoaiPhong() {
   try {
@@ -50,31 +52,24 @@ async function fetchLoaiPhong() {
   }
 }
 
-async function fetchTags() {
-  try {
-    const data = await getAllTags()
-    tagOptions.value = data.map(tag => ({ label: tag.ten, value: tag.id }))
-  }
-  catch (err: any) {
-    window.$message.error(err.message || 'Không thể tải danh sách tags')
-  }
-}
-
 const trangThaiOptions = [
   { label: 'Hoạt động', value: 'DANG_HOAT_DONG' },
   { label: 'Bảo trì', value: 'DANG_SUA' },
   { label: 'Ngưng hoạt động', value: 'NGUNG_HOAT_DONG' },
 ]
 
+// --- Dữ liệu bảng ---
 const listData = ref<PhongResponse[]>([])
 const totalItems = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const errorMessage = ref('')
 
+// --- Sorting ---
 const sortBy = ref<string>('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
 
+// --- Hàm fetch phòng ---
 async function fetchRooms(page = 1) {
   startLoading()
   errorMessage.value = ''
@@ -100,8 +95,6 @@ async function fetchRooms(page = 1) {
       params.sucChuaMin = model.sucChuaMin
     if (model.sucChuaMax !== null)
       params.sucChuaMax = model.sucChuaMax
-    if (model.tagIds && model.tagIds.length > 0)
-      params.tagIds = model.tagIds
 
     const res = await getAllRooms(params)
 
@@ -140,6 +133,7 @@ async function fetchRooms(page = 1) {
   }
 }
 
+// --- Watch tự động lọc ---
 watch(
   () => ({ ...model }),
   () => {
@@ -148,6 +142,7 @@ watch(
   { deep: true },
 )
 
+// --- Hành động ---
 function handleEditTable(row: PhongResponse) {
   modalType.value = 'edit'
   modalData.value = { id: row.id }
@@ -172,7 +167,7 @@ async function handleDeleteRoom(id: string) {
   }
 }
 
-
+// Reset toàn bộ filters + reload bảng
 function handleResetSearch() {
   Object.assign(model, initialModel)
   sortBy.value = ''
@@ -200,31 +195,13 @@ function getSortIcon(column: string) {
   return sortOrder.value === 'asc' ? ' ↑' : ' ↓'
 }
 
-
+// --- Cột bảng ---
 const columns: DataTableColumns<PhongResponse> = [
   {
     title: 'Mã / Tên phòng',
     align: 'center',
     key: 'maTenPhong',
-    render: (row) => {
-      const tags = row.tags || []
-      return h('div', { style: 'display: flex; flex-direction: column; align-items: center; gap: 6px;' }, [
-        h('div', { style: 'font-weight: 500;' }, `${row.ma} - ${row.ten}`),
-        tags.length > 0
-          ? h(
-            'div',
-            { style: 'display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;' },
-            tags.map(tag =>
-              h(
-                NTag,
-                { size: 'small', type: 'info', round: true },
-                { default: () => tag.ten },
-              ),
-            ),
-          )
-          : null,
-      ])
-    },
+    render: row => `${row.ma} - ${row.ten}`,
   },
   {
     title: 'Tầng',
@@ -315,11 +292,10 @@ const columns: DataTableColumns<PhongResponse> = [
   },
 ]
 
-
+// --- Mounted ---
 onMounted(() => {
   fetchRooms()
   fetchLoaiPhong()
-  fetchTags()
 })
 </script>
 
@@ -380,16 +356,6 @@ onMounted(() => {
               placeholder="0"
               :min="0"
               :show-button="false"
-              clearable
-            />
-          </n-form-item-gi>
-
-          <n-form-item-gi :span="12" label="Lọc theo Tags" path="tagIds">
-            <NSelect
-              v-model:value="model.tagIds"
-              :options="tagOptions"
-              placeholder="Chọn tags"
-              multiple
               clearable
             />
           </n-form-item-gi>

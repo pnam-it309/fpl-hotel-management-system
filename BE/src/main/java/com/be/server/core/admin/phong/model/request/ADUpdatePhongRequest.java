@@ -22,5 +22,5 @@ public class ADUpdatePhongRequest {
 
     private TrangThaiHoatDong trangThaiPhong;
 
-    private List<String> tagIds;
+
 }

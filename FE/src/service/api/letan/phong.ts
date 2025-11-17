@@ -1,3 +1,4 @@
+// src/service/api/letan/phong.ts
 import { API_LE_TAN_PHONG } from '@/constants/url'
 import type { AxiosResponse } from 'axios'
 import type { ResponseList, PaginationParams, DefaultResponse } from '@/typings/api/api.common'
@@ -12,7 +13,6 @@ export interface ParamsGetRoom extends PaginationParams {
   giaMax?: number
   sucChuaMin?: number
   sucChuaMax?: number
-  tagIds?: string[]
 }
 
 export interface PhongResponse extends ResponseList {
@@ -24,11 +24,6 @@ export interface PhongResponse extends ResponseList {
   loaiPhong: string
   sucChua: string
   trangThaiHoatDong?: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
-  tags?: Array<{
-    id: string
-    ma: string
-    ten: string
-  }>
 }
 
 export interface AddPhongRequest {
@@ -37,7 +32,6 @@ export interface AddPhongRequest {
   idLoaiPhong: string
   tang: number
   trangThaiHoatDong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
-  tagIds?: string[]
 }
 
 export interface UpdatePhongRequest {
@@ -46,22 +40,18 @@ export interface UpdatePhongRequest {
   idLoaiPhong: string
   tang: number
   trangThaiPhong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
-  tagIds?: string[]
 }
 
 export interface PhongDetailResponse {
-  phong: {
-    id: string
-    ma: string
-    ten: string
-    tang: number
-    idLoaiPhong: string
-    tenLoaiPhong: string
-    soNguoiToiDa: number
-    giaCaNgay: number
-    trangThaiHoatDong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
-  }
-  tagIds: string[]
+  id: string
+  ma: string
+  ten: string
+  tang: number
+  idLoaiPhong: string
+  tenLoaiPhong: string
+  soNguoiToiDa: number
+  giaCaNgay: number
+  trangThaiHoatDong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
 }
 
 export interface RoomTypeResponse extends ResponseList {
@@ -74,13 +64,6 @@ export interface RoomTypeResponse extends ResponseList {
   soLuongNguoiToiDa: number
   giaCaNgay: number
   status: 'ACTIVE' | 'INACTIVE'
-}
-
-export interface TagResponse {
-  id: string
-  ma: string
-  ten: string
-  moTa?: string
 }
 
 export async function getAllRooms(params: ParamsGetRoom) {
@@ -179,33 +162,5 @@ export async function getRoomTypes() {
   }
   catch (error: any) {
     throw new Error(error.response?.data?.message || 'Không thể tải danh sách loại phòng')
-  }
-}
-
-export async function getAllTags() {
-  try {
-    const res = await request({
-      url: `${API_LE_TAN_PHONG}/tags`,
-      method: 'GET',
-    }) as AxiosResponse<DefaultResponse<TagResponse[]>>
-
-    return res.data.data || []
-  }
-  catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Không thể tải danh sách tags')
-  }
-}
-
-export async function getTagsByPhongId(phongId: string) {
-  try {
-    const res = await request({
-      url: `${API_LE_TAN_PHONG}/${phongId}/tags`,
-      method: 'GET',
-    }) as AxiosResponse<DefaultResponse<TagResponse[]>>
-
-    return res.data.data || []
-  }
-  catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Không thể tải tags của phòng')
   }
 }
