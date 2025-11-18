@@ -9,8 +9,10 @@ import com.be.server.entity.LoaiPhong;
 import com.be.server.infrastructure.constant.EntityStatus;
 import com.be.server.utils.RandomNumberGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,8 +25,25 @@ public class ADLoaiPhongServiceImpl implements ADLoaiPhongService {
     private final LTLoaiPhongReposiotry repository;
 
     @Override
-    public ResponseObject<?> getAllLoaiPhong() {
-        List<LoaiPhong> list = repository.findAll();
+    public ResponseObject<?> getAllLoaiPhong(String tuKhoa, EntityStatus trangThai) {
+        Specification<LoaiPhong> spec = Specification.where(null);
+
+        if (StringUtils.hasText(tuKhoa)) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.or(
+                            criteriaBuilder.like(root.get("ma"), "%" + tuKhoa + "%"),
+                            criteriaBuilder.like(root.get("ten"), "%" + tuKhoa + "%")
+                    )
+            );
+        }
+
+        if (trangThai != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("status"), trangThai)
+            );
+        }
+
+        List<LoaiPhong> list = repository.findAll(spec);
         return new ResponseObject<>(list, HttpStatus.OK, "Lấy danh sách loại phòng thành công");
     }
 

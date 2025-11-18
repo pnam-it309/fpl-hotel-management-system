@@ -1,6 +1,5 @@
 // src/service/api/letan/phong.ts
 import { API_LE_TAN_PHONG } from '@/constants/url'
-import { API_LE_TAN_LOAI_PHONG } from '@/constants/url'
 import type { AxiosResponse } from 'axios'
 import type { ResponseList, PaginationParams, DefaultResponse } from '@/typings/api/api.common'
 import request from '@/service/request'
@@ -26,7 +25,7 @@ export interface PhongResponse extends ResponseList {
   tang: number
   loaiPhong: string
   sucChua: string
-  trangThaiHoatDong?:  'HOAT_DONG' | 'BAO_TRI' | 'NGUNG_HOAT_DONG'
+  trangThaiHoatDong?: 'DANG_HOAT_DONG' | 'DANG_SUA' | 'NGUNG_HOAT_DONG'
 }
 
 export interface AddPhongRequest {
@@ -34,7 +33,7 @@ export interface AddPhongRequest {
   ten: string
   idLoaiPhong: string
   tang: number
-  trangThaiHoatDong: 'HOAT_DONG' | 'BAO_TRI' | 'NGUNG_HOAT_DONG'
+  trangThaiPhong: number  // 0: DANG_HOAT_DONG, 1: DANG_SUA, 2: NGUNG_HOAT_DONG
 }
 
 export interface RoomTypeResponse extends ResponseList {
@@ -77,18 +76,20 @@ export async function getAllRooms(params: ParamsGetRoom) {
   }
 }
 
-// Xóa phòng (thay đổi trạng thái)
+// Xóa phòng
+// @param id - ID của phòng cần xóa
+// @returns Promise với dữ liệu phản hồi từ server
 export async function deleteRoom(id: string) {
   try {
-    const res = (await request({
-      url: `${API_LE_TAN_PHONG}/changeStatus/${id}`,
-      method: 'PUT',
-    })) as AxiosResponse<DefaultResponse<any>>
-
+    const res = await request({
+      url: `${API_LE_TAN_PHONG}/${id}`,
+      method: 'DELETE',
+    })
     return res.data
-  }
-  catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Không thể xóa phòng')
+  } catch (error: any) {
+    // Nếu có lỗi từ server, ném ra lỗi với thông báo từ server
+    const errorMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi xóa phòng'
+    throw new Error(errorMessage)
   }
 }
 

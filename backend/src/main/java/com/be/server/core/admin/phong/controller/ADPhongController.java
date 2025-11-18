@@ -32,6 +32,11 @@ public class ADPhongController {
     public ResponseEntity<?> taoPhong(@RequestBody ADSavePhongRequest request){
         return Helper.createResponseEntity(adPhongService.savePhong(request));
     }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> xoaPhong(@PathVariable String id) {
+        return Helper.createResponseEntity(adPhongService.deletePhong(id));
+    }
 
     @GetMapping("/loai-phong")
     public ResponseEntity<?> loaiPhong(){
