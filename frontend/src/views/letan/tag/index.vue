@@ -14,7 +14,8 @@ import {
 import TableModal from './components/TableModal.vue'
 
 import type { TagResponse } from '@/service/api/letan/tag'
-import { getAllTags,changeStatusTag,addTag,updateTag } from '@/service/api/letan/tag'
+import { getAllTags, changeStatusTag, addTag, updateTag } from '@/service/api/letan/tag'
+import { downloadFile } from '@/utils/dowload'
 
 // --- Loading & Modal ---
 const { bool: loading, setTrue: startLoading, setFalse: endLoading } = useBoolean(false)
@@ -134,6 +135,48 @@ function changePage(page: number) {
   fetchTags(page)
 }
 
+// Handle download
+async function handleDownload() {
+  try {
+    startLoading()
+    const params: any = {
+      page: 0, // Get all data
+      size: 10000, // Large number to get all records
+    }
+    
+    // Apply current filters
+    if (model.maOrTen) params.maOrTen = model.maOrTen
+    if (model.status !== null && model.status !== undefined) params.status = model.status
+
+    const res = await getAllTags(params)
+    
+    // Convert data to CSV
+    const headers = ['Mã tag', 'Tên tag', 'Mô tả', 'Trạng thái']
+    const csvRows = [
+      headers.join(','),
+      ...res.items.map(tag => [
+        `"${tag.maTag || ''}"`,
+        `"${tag.tenTag || ''}"`,
+        `"${tag.moTaTag || ''}"`,
+        `"${tag.status === 0 ? 'Hoạt động' : 'Ngưng hoạt động'}"`
+      ].join(','))
+    ]
+    
+    const csvContent = csvRows.join('\n')
+    const blob = new Blob([
+      new Uint8Array([0xEF, 0xBB, 0xBF]), // UTF-8 BOM
+      csvContent
+    ], { type: 'text/csv;charset=utf-8;' })
+    
+    downloadFile(blob, `danh_sach_tag_${new Date().toISOString().split('T')[0]}.csv`)
+    
+  } catch (error: any) {
+    window.$message.error(error.message || 'Có lỗi xảy ra khi tải xuống dữ liệu')
+  } finally {
+    endLoading()
+  }
+}
+
 
 
 // --- Cột bảng ---
@@ -193,10 +236,13 @@ const columns: DataTableColumns<TagResponse> = [
             { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
             { default: () => 'Sửa' },
           ),
-          h(NPopconfirm, { onPositiveClick: () => handleChangeStatus(row.id) }, {
+          h(NPopconfirm, { 
+            onPositiveClick: () => handleChangeStatus(row.id),
+            positiveText: 'Xác nhận',
+            negativeText: 'Hủy'
+          }, {
             default: () => 'Xác nhận thay đổi trạng thái tag?',
-            trigger: () =>
-              h(NButton, { size: 'small', type: 'error' }, { default: () => 'Thay đổi' }),
+            trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => 'Thay đổi' }),
           }),
         ],
       }),
@@ -251,7 +297,7 @@ onMounted(() => {
           <NButton strong secondary>
             Batch Import
           </NButton>
-          <NButton strong secondary class="ml-a">
+          <NButton strong secondary class="ml-a" @click="handleDownload">
             Download
           </NButton>
         </div>

@@ -2,11 +2,6 @@ package com.be.server.core.admin.phong.service.impl;
 
 import com.be.server.core.admin.phong.model.request.ADPhongSearchRequest;
 import com.be.server.core.admin.phong.model.request.ADSavePhongRequest;
-import com.be.server.core.admin.phong.model.request.ADUpdatePhongRequest;
-import com.be.server.core.admin.phong.model.response.ADPhongDetail;
-import com.be.server.core.admin.phong.model.response.LoaiPhongResponse;
-import com.be.server.core.admin.phong.model.response.PhongProjection;
-import com.be.server.core.admin.phong.model.response.PhongResponse;
 import com.be.server.core.admin.phong.repository.ADLoaiPhongRepository;
 import com.be.server.core.admin.phong.repository.ADPhongRepository;
 import com.be.server.core.admin.phong.repository.ADPhongTagRepository;

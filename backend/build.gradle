@@ -55,6 +55,7 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
 
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 }
 
