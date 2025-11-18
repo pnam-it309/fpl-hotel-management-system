@@ -9,7 +9,7 @@ interface Room {
   loaiPhong?: string
   gia?: number
   sucChua?: number
-  trangThaiHoatDong: string
+  trangThaiHoatDong: string | number
 }
 
 interface Props {
@@ -54,26 +54,26 @@ const isGiaLocked = ref(false)
 
 // --- Trạng thái phòng ---
 const trangThaiOptions = ref([
-  { label: 'Hoạt động', value: 'HOAT_DONG' },
-  { label: 'Bảo trì', value: 'BAO_TRI' },
-  { label: 'Ngưng hoạt động', value: 'NGUNG_HOAT_DONG' },
+  { label: 'Hoạt động', value: 0 },
+  { label: 'Bảo trì', value: 1 },
+  { label: 'Ngưng hoạt động', value: 2 },
 ])
 
-function mapTrangThaiPhong(trangThai: string): string {
+function mapTrangThaiPhong(trangThai: string): number {
   switch (trangThai) {
-    case 'Hoạt động': return 'HOAT_DONG'
-    case 'Bảo trì': return 'BAO_TRI'
-    case 'Ngưng hoạt động': return 'NGUNG_HOAT_DONG'
-    default: return 'HOAT_DONG'
+    case 'Hoạt động': return 0; // DANG_HOAT_DONG
+    case 'Bảo trì': return 1;   // DANG_SUA
+    case 'Ngưng hoạt động': return 2; // NGUNG_HOAT_DONG
+    default: return 0;
   }
 }
 
-function reverseMapTrangThaiPhong(enumValue: string): string {
+function reverseMapTrangThaiPhong(enumValue: number): string {
   switch (enumValue) {
-    case 'HOAT_DONG': return 'Hoạt động'
-    case 'BAO_TRI': return 'Bảo trì'
-    case 'NGUNG_HOAT_DONG': return 'Ngưng hoạt động'
-    default: return 'Hoạt động'
+    case 0: return 'Hoạt động';
+    case 1: return 'Bảo trì';
+    case 2: return 'Ngưng hoạt động';
+    default: return 'Hoạt động';
   }
 }
 
@@ -122,7 +122,7 @@ watch(
       if (props.type === 'edit' && props.modalData) {
         formModel.value = {
           ...props.modalData,
-          trangThaiHoatDong: reverseMapTrangThaiPhong(props.modalData.trangThaiHoatDong),
+          trangThaiHoatDong: reverseMapTrangThaiPhong(Number(props.modalData.trangThaiHoatDong)),
         }
         isGiaLocked.value = true
         isSucChuaLocked.value = true
@@ -160,7 +160,9 @@ async function handleSubmit() {
       idLoaiPhong: formModel.value.loaiPhong!,
       sucChua: formModel.value.sucChua!,
       tang: formModel.value.tang!,
-      trangThaiPhongHoatDong: mapTrangThaiPhong(formModel.value.trangThaiHoatDong),
+      trangThaiPhong: typeof formModel.value.trangThaiHoatDong === 'string' 
+        ? mapTrangThaiPhong(formModel.value.trangThaiHoatDong) 
+        : formModel.value.trangThaiHoatDong,
     }
 
     const res = await addPhong(payload)

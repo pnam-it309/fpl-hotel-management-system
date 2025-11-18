@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -112,7 +113,7 @@ public class ADPhongServiceImpl implements ADPhongService {
         LoaiPhong loaiPhong = optionalLoaiPhong.get();
 
         addPhong.setTang(phong.getTang());
-        addPhong.setTrangThaiHoatDong(TrangThaiHoatDong.DANG_HOAT_DONG);
+        addPhong.setTrangThaiHoatDong(phong.getTrangThaiPhong());
         addPhong.setLoaiPhong(loaiPhong);
 
         adPhongRepository.save(addPhong);
@@ -123,5 +124,34 @@ public class ADPhongServiceImpl implements ADPhongService {
     @Override
     public ResponseObject<?> getAllLoaiPhong(){
         return new ResponseObject<>(adLoaiPhongRepository.getAllLoaiPhong() , HttpStatus.OK , "lấy thành công loại phòng");
+    }
+    
+    @Override
+    @Transactional
+    public ResponseObject<?> deletePhong(String id) {
+        try {
+            // Check if room exists
+            Optional<Phong> optionalPhong = adPhongRepository.findById(id);
+            if (optionalPhong.isEmpty()) {
+                return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Không tìm thấy phòng cần xóa");
+            }
+            
+            // Check for active bookings
+            if (adPhongRepository.existsActiveBookings(id)) {
+                return new ResponseObject<>(
+                    null, 
+                    HttpStatus.CONFLICT, 
+                    "Không thể xóa phòng vì phòng đang được sử dụng hoặc đã được đặt trước"
+                );
+            }
+            
+            // Delete the room
+            adPhongRepository.deleteById(id);
+            
+            return new ResponseObject<>(null, HttpStatus.OK, "Xóa phòng thành công");
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa phòng: {}", e.getMessage(), e);
+            return new ResponseObject<>(null, HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi khi xóa phòng");
+        }
     }
 }

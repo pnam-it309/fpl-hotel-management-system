@@ -7,9 +7,11 @@ import com.be.server.infrastructure.constant.TrangThaiHoatDong;
 import com.be.server.repository.PhongRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -66,9 +68,19 @@ public interface ADPhongRepository extends PhongRepository {
             Pageable pageable
     );
 
+    @Query("SELECT COUNT(c) > 0 FROM ChiTietDatPhong c WHERE c.room.id = :phongId AND c.status_chi_tiet IN ('DANG_SU_DUNG', 'BOOKED')")
+    boolean existsActiveBookings(@Param("phongId") String phongId);
+
+    @Modifying
+    @Query("DELETE FROM Phong p WHERE p.id = :id")
+    @Transactional
+    void deleteById(@Param("id") String id);
 
     Optional<Phong> findByMa(String ma);
 
     Optional<Phong> findByTen(String ten);
+    
+    @Override
+    Optional<Phong> findById(String id);
 }
 

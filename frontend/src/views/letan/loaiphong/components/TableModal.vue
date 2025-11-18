@@ -77,6 +77,17 @@ const title = computed(() => (props.type === 'edit' ? 'Sửa loại phòng' : 'T
 
 async function handleSubmit() {
   if (!formModel.value.ten?.trim()) { window.$message.warning('Vui lòng nhập tên loại phòng!'); return }
+   // thống báo số giường phải lớn hơn 0 
+  const totalBeds = (formModel.value.soGiuongDon || 0) + (formModel.value.soGiuongDoi || 0);
+  if (totalBeds < 1) {
+    window.$message.warning('Phải có ít nhất 1 giường (đơn hoặc đôi)!');
+    return;
+  }
+
+  // if (totalBeds > 3) {
+  //   window.$message.warning('Tổng số giường không được vượt quá 3!');
+  //   return;
+  // }
   if (formModel.value.soNguoiQuyDinh <= 0 || formModel.value.soNguoiToiDa <= 0) { window.$message.warning('Số người phải lớn hơn 0!'); return }
   if (formModel.value.soNguoiQuyDinh > formModel.value.soNguoiToiDa) { window.$message.warning('Số người quy định không được lớn hơn số người tối đa!'); return }
 

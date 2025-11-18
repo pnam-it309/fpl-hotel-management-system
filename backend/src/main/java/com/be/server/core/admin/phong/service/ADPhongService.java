@@ -13,5 +13,7 @@ public interface ADPhongService {
 //
     ResponseObject<?> savePhong(ADSavePhongRequest phong);
 
+    ResponseObject<?> deletePhong(String id);
+
     ResponseObject<?> getAllLoaiPhong();
 }

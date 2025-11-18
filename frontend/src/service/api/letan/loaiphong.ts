@@ -38,10 +38,29 @@ export interface AddRoomTypeRequest {
 // --- Lấy danh sách loại phòng ---
 export async function getAllRoomTypes(params: ParamsGetRoomType) {
   try {
+    // Build query parameters
+    const queryParams: Record<string, any> = {}
+    
+    if (params.tuKhoa) {
+      queryParams.tuKhoa = params.tuKhoa
+    }
+    
+    if (params.trangThai) {
+      queryParams.trangThai = params.trangThai
+    }
+    
+    if (params.page) {
+      queryParams.page = params.page
+    }
+    
+    if (params.size) {
+      queryParams.size = params.size
+    }
+    
     const res = await request({
       url: `${API_LE_TAN_LOAI_PHONG}`,
       method: 'GET',
-      params,
+      params: queryParams,
     }) as AxiosResponse<DefaultResponse<RoomTypeResponse[]>>
 
     return {

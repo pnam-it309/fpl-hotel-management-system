@@ -139,14 +139,35 @@ function handleAddTable() {
   openModal()
 }
 
+// Xử lý xóa phòng
 async function handleDeleteRoom(id: string) {
   try {
+    // Hiển thị loading
+    window.$loadingBar.start()
+    
+    // Gọi API xóa phòng
     const res = await deleteRoom(id)
+    
+    // Hiển thị thông báo thành công
     window.$message.success(res?.message || 'Xóa phòng thành công!')
+    
+    // Làm mới danh sách phòng
     fetchRooms(currentPage.value)
   } catch (error: any) {
-    const msg = error.message || 'Đã xảy ra lỗi khi xóa phòng!'
-    window.$message.error(msg)
+    // Xử lý lỗi
+    const errorMessage = error.message || 'Đã xảy ra lỗi khi xóa phòng!'
+    
+    // Hiển thị thông báo lỗi chi tiết hơn
+    if (error.message?.includes('đang được sử dụng')) {
+      window.$message.error(errorMessage)
+    } else {
+      window.$message.error(errorMessage)
+    }
+    
+    console.error('Lỗi khi xóa phòng:', error)
+  } finally {
+    // Ẩn loading
+    window.$loadingBar.finish()
   }
 }
 
@@ -238,13 +259,13 @@ const columns: DataTableColumns<PhongResponse> = [
     key: 'sucChua',
   },
   {
-    title: 'Trạng thái phòng',
+    title: 'Trạng thái ',
     align: 'center',
     key: 'trangThaiHoatDong',
     render: (row) => {
       const statusMap: Record<string, { label: string, type: 'success' | 'warning' | 'error' }> = {
-        HOAT_DONG: { label: 'Hoạt động', type: 'success' },
-        BAO_TRI: { label: 'Bảo trì', type: 'warning' },
+        DANG_HOAT_DONG: { label: 'Đang hoạt động', type: 'success' },
+        DANG_SUA: { label: 'Bảo trì', type: 'warning' },
         NGUNG_HOAT_DONG: { label: 'Ngưng hoạt động', type: 'error' },
       }
 
@@ -264,10 +285,13 @@ const columns: DataTableColumns<PhongResponse> = [
             { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
             { default: () => 'Sửa' },
           ),
-          h(NPopconfirm, { onPositiveClick: () => handleDeleteRoom(row.id) }, {
+          h(NPopconfirm, { 
+            onPositiveClick: () => handleDeleteRoom(row.id),
+            positiveText: 'Xác nhận',
+            negativeText: 'Hủy'
+          }, {
             default: () => 'Xác nhận xóa phòng?',
-            trigger: () =>
-              h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' }),
+            trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' }),
           }),
         ],
       }),
