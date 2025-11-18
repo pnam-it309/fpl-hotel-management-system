@@ -145,6 +145,7 @@ async function fetchRooms(page = 1) {
   }
 }
 
+// --- Watch tự động lọc ---
 watch(
   () => ({ ...model }),
   () => {
@@ -569,6 +570,7 @@ onMounted(() => {
       </n-form>
     </n-card>
 
+    <!-- Bảng danh sách -->
     <n-card>
       <NSpace vertical size="large">
         <div class="flex gap-4">

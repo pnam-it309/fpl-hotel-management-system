@@ -158,7 +158,11 @@ const columns: DataTableColumns<RoomTypeResponse> = [
       h(NSpace, { justify: 'center' }, {
         default: () => [
           h(NButton, { size: 'small', type: 'primary', onClick: () => openEditModal(row) }, { default: () => 'Sửa' }),
-          h(NPopconfirm, { onPositiveClick: () => handleDeleteRoomType(row.id) }, {
+          h(NPopconfirm, { 
+            onPositiveClick: () => handleDeleteRoomType(row.id),
+            positiveText: 'Xác nhận',
+            negativeText: 'Hủy'
+          }, {
             default: () => 'Xác nhận xóa loại phòng?',
             trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' })
           })

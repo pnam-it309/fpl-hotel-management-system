@@ -1,6 +1,6 @@
 package com.be.server.core.admin.phong.repository;
 
-import com.be.server.core.admin.phong.model.response.ADPhongDetail;
+
 import com.be.server.core.admin.phong.model.response.PhongProjection;
 import com.be.server.entity.Phong;
 import com.be.server.infrastructure.constant.TrangThaiHoatDong;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
 
 @Repository
 public interface ADPhongRepository extends PhongRepository {
@@ -115,4 +116,7 @@ public interface ADPhongRepository extends PhongRepository {
     Optional<Phong> findByMa(String ma);
 
     Optional<Phong> findByTen(String ten);
+
+
 }
+
