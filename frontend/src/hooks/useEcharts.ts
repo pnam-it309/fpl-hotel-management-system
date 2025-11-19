@@ -30,7 +30,8 @@ import * as echarts from 'echarts/core'
 
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
-import { useTemplateRef } from 'vue'
+import { useTemplateRef, nextTick, watch, onMounted, onUnmounted, type Ref } from 'vue'
+import { useElementSize } from '@vueuse/core'
 
 // Use ComposeOption to compose an Option type that only has required components and charts
 export type ECOption = echarts.ComposeOption<
@@ -77,19 +78,16 @@ export function useEcharts(ref: string, chartOptions: Ref<ECOption>) {
 
   const { width, height } = useElementSize(el)
 
-  const isRendered = () => Boolean(el && chart)
+  const isRendered = () => Boolean(el?.value && chart)
 
   async function render() {
-    // Do not render if width or height does not exist
-    if (!width || !height)
-      return
+    // Wait until element has non-zero size
+    if (!el?.value || width.value === 0 || height.value === 0) return
 
     const chartTheme = appStore.colorMode ? 'dark' : 'light'
     await nextTick()
-    if (el) {
-      chart = echarts.init(el.value, chartTheme)
-      update(chartOptions.value)
-    }
+    chart = echarts.init(el.value, chartTheme)
+    update(chartOptions.value)
   }
 
   async function update(updateOptions: ECOption) {
@@ -104,8 +102,12 @@ export function useEcharts(ref: string, chartOptions: Ref<ECOption>) {
   }
 
   watch([width, height], async ([newWidth, newHeight]) => {
-    if (isRendered() && newWidth && newHeight)
+    if (!newWidth || !newHeight) return
+    if (!isRendered()) {
+      await render()
+    } else {
       chart?.resize()
+    }
   })
 
   watch(chartOptions, (newValue) => {

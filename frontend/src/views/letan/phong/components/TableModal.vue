@@ -13,7 +13,7 @@ interface Room {
   soNguoiQuyDinh?: number
   soGiuongDon?: number
   soGiuongDoi?: number
-  trangThaiHoatDong: string
+  trangThaiHoatDong: 'DANG_HOAT_DONG' | 'DANG_SUA' | 'NGUNG_HOAT_DONG'
   tags?: string[]
 }
 
@@ -245,9 +245,8 @@ async function handleSubmit() {
         ma: formModel.value.maPhong.trim(),
         ten: formModel.value.tenPhong.trim(),
         idLoaiPhong: formModel.value.loaiPhong!,
-        sucChua: formModel.value.sucChua!,
         tang: formModel.value.tang!,
-        trangThaiHoatDong: formModel.value.trangThaiHoatDong,
+        trangThaiPhong: formModel.value.trangThaiHoatDong,
         tagIds: formModel.value.tags || [],
       }
 
