@@ -173,125 +173,136 @@ async function handleDeleteRoom(id: string) {
     fetchRooms(currentPage.value)
   }
   catch (error: any) {
-    const msg = error.message || 'Đã xảy ra lỗi khi xóa phòng!'
-    window.$message.error(msg)
+    const errorMessage = error.message || 'Đã xảy ra lỗi khi xóa phòng!'
+
+    // Hiển thị thông báo lỗi chi tiết hơn
+    if (error.message?.includes('đang được sử dụng')) {
+      window.$message.error(errorMessage)
+    } else {
+      window.$message.error(errorMessage)
+    }
+
+    console.error('Lỗi khi xóa phòng:', error)
+  } finally {
+    // Ẩn loading
+    window.$loadingBar.finish()
   }
 }
 
-function handleResetSearch() {
-  Object.assign(model, initialModel)
-  sortBy.value = ''
-  sortOrder.value = 'asc'
-  fetchRooms(1)
-}
-
-function changePage(page: number) {
-  fetchRooms(page)
-}
-
-function handleSort(column: string) {
-  if (sortBy.value === column)
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  else {
-    sortBy.value = column
+  function handleResetSearch() {
+    Object.assign(model, initialModel)
+    sortBy.value = ''
     sortOrder.value = 'asc'
+    fetchRooms(1)
   }
-  fetchRooms(currentPage.value)
-}
 
-function handleRowClick(row: PhongResponse) {
-  const index = expandedRowKeys.value.indexOf(row.id)
-  if (index > -1) {
-    expandedRowKeys.value.splice(index, 1)
-  } else {
-    expandedRowKeys.value.push(row.id)
+  function changePage(page: number) {
+    fetchRooms(page)
   }
-}
 
-// Helper function to format capacity range
-function getCapacityRange(row: PhongResponse): string {
-  if (row.soNguoiQuyDinh && row.sucChua) {
-    return `${row.soNguoiQuyDinh}~${row.sucChua}`
-  } else if (row.sucChua) {
-    return `${row.sucChua}`
+  function handleSort(column: string) {
+    if (sortBy.value === column)
+      sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    else {
+      sortBy.value = column
+      sortOrder.value = 'asc'
+    }
+    fetchRooms(currentPage.value)
   }
-  return '-'
-}
 
-const columns: DataTableColumns<PhongResponse> = [
-  {
-    type: 'expand',
-    renderExpand: (row) => {
-      return h(
-        'div',
-        { style: 'padding: 20px 32px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; margin: 8px 0;' },
-        [
-          h('div', { style: 'display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 32px; justify-content: start;' }, [
+  function handleRowClick(row: PhongResponse) {
+    const index = expandedRowKeys.value.indexOf(row.id)
+    if (index > -1) {
+      expandedRowKeys.value.splice(index, 1)
+    } else {
+      expandedRowKeys.value.push(row.id)
+    }
+  }
 
-            h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#8b5cf6' }, { default: () => h(Home) }),
-                  h('span', 'Tên phòng:')
-                ]),
-                h('span', { style: 'color: #6b7280;' }, row.ten)
-              ]),
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#ec4899' }, { default: () => h(Category) }),
-                  h('span', 'Loại phòng:')
-                ]),
-                h('span', { style: 'color: #6b7280;' }, row.loaiPhong || '-')
-              ]),
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#10b981' }, { default: () => h(Currency) }),
-                  h('span', 'Giá:')
-                ]),
-                h('span', { style: 'color: #10b981; font-weight: 600;' }, `${row.price?.toLocaleString('vi-VN')} VNĐ`)
-              ]),
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#f59e0b' }, { default: () => h(UserMultiple) }),
-                  h('span', 'Sức chứa (cơ bản~tối đa):')
-                ]),
-                h('span', { style: 'color: #6b7280;' }, `${getCapacityRange(row)} người`)
-              ])
-            ]),
+  // Helper function to format capacity range
+  function getCapacityRange(row: PhongResponse): string {
+    if (row.soNguoiQuyDinh && row.sucChua) {
+      return `${row.soNguoiQuyDinh}~${row.sucChua}`
+    } else if (row.sucChua) {
+      return `${row.sucChua}`
+    }
+    return '-'
+  }
 
-            h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#06b6d4' }, { default: () => h(Hotel) }),
-                  h('span', 'Số giường đơn:')
+  const columns: DataTableColumns<PhongResponse> = [
+    {
+      type: 'expand',
+      renderExpand: (row) => {
+        return h(
+          'div',
+          { style: 'padding: 20px 32px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; margin: 8px 0;' },
+          [
+            h('div', { style: 'display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 32px; justify-content: start;' }, [
+
+              h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#8b5cf6' }, { default: () => h(Home) }),
+                    h('span', 'Tên phòng:')
+                  ]),
+                  h('span', { style: 'color: #6b7280;' }, row.ten)
                 ]),
-                h('span', { style: 'color: #6b7280;' }, (row as any).soGiuongDon || '-')
-              ]),
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#8b5cf6' }, { default: () => h(Hotel) }),
-                  h('span', 'Số giường đôi:')
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#ec4899' }, { default: () => h(Category) }),
+                    h('span', 'Loại phòng:')
+                  ]),
+                  h('span', { style: 'color: #6b7280;' }, row.loaiPhong || '-')
                 ]),
-                h('span', { style: 'color: #6b7280;' }, (row as any).soGiuongDoi || '-')
-              ]),
-              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
-                  h(NIcon, { size: 18, color: '#3b82f6' }, { default: () => h(ChartLineData) }),
-                  h('span', 'Trạng thái:')
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#10b981' }, { default: () => h(Currency) }),
+                    h('span', 'Giá:')
+                  ]),
+                  h('span', { style: 'color: #10b981; font-weight: 600;' }, `${row.price?.toLocaleString('vi-VN')} VNĐ`)
                 ]),
-                h(
-                  NTag,
-                  {
-                    type: row.trangThaiHoatDong === 'DANG_HOAT_DONG' ? 'success' : row.trangThaiHoatDong === 'DANG_SUA' ? 'warning' : 'error',
-                    size: 'small'
-                  },
-                  {
-                    default: () => row.trangThaiHoatDong === 'DANG_HOAT_DONG' ? 'Hoạt động' : row.trangThaiHoatDong === 'DANG_SUA' ? 'Bảo trì' : 'Ngưng hoạt động'
-                  }
-                )
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#f59e0b' }, { default: () => h(UserMultiple) }),
+                    h('span', 'Sức chứa (cơ bản~tối đa):')
+                  ]),
+                  h('span', { style: 'color: #6b7280;' }, `${getCapacityRange(row)} người`)
+                ])
               ]),
-              row.tags && row.tags.length > 0
-                ? h('div', { style: 'display: flex; align-items: flex-start; gap: 12px;' }, [
+
+              h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#06b6d4' }, { default: () => h(Hotel) }),
+                    h('span', 'Số giường đơn:')
+                  ]),
+                  h('span', { style: 'color: #6b7280;' }, (row as any).soGiuongDon || '-')
+                ]),
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#8b5cf6' }, { default: () => h(Hotel) }),
+                    h('span', 'Số giường đôi:')
+                  ]),
+                  h('span', { style: 'color: #6b7280;' }, (row as any).soGiuongDoi || '-')
+                ]),
+                h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                  h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                    h(NIcon, { size: 18, color: '#3b82f6' }, { default: () => h(ChartLineData) }),
+                    h('span', 'Trạng thái:')
+                  ]),
+                  h(
+                    NTag,
+                    {
+                      type: row.trangThaiHoatDong === 'DANG_HOAT_DONG' ? 'success' : row.trangThaiHoatDong === 'DANG_SUA' ? 'warning' : 'error',
+                      size: 'small'
+                    },
+                    {
+                      default: () => row.trangThaiHoatDong === 'DANG_HOAT_DONG' ? 'Hoạt động' : row.trangThaiHoatDong === 'DANG_SUA' ? 'Bảo trì' : 'Ngưng hoạt động'
+                    }
+                  )
+                ]),
+                row.tags && row.tags.length > 0
+                  ? h('div', { style: 'display: flex; align-items: flex-start; gap: 12px;' }, [
                     h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
                       h(NIcon, { size: 18, color: '#667eea' }, { default: () => h(TagIcon) }),
                       h('span', 'Tags:')
@@ -308,28 +319,28 @@ const columns: DataTableColumns<PhongResponse> = [
                       )
                     )
                   ])
-                : null
+                  : null
+              ])
             ])
-          ])
-        ]
-      )
-    }
-  },
-  {
-    title: 'Tên phòng',
-    align: 'center',
-    key: 'maTenPhong',
-    render: (row) => {
-      const tags = row.tags || []
+          ]
+        )
+      }
+    },
+    {
+      title: 'Tên phòng',
+      align: 'center',
+      key: 'maTenPhong',
+      render: (row) => {
+        const tags = row.tags || []
 
-      return h(
-        'div',
-        {
-          style: 'display: inline-flex; align-items: center; position: relative; padding-left: 38px;'
-        },
-        [
-          tags.length > 0
-            ? h(
+        return h(
+          'div',
+          {
+            style: 'display: inline-flex; align-items: center; position: relative; padding-left: 38px;'
+          },
+          [
+            tags.length > 0
+              ? h(
                 NTooltip,
                 {
                   trigger: 'hover',
@@ -389,102 +400,102 @@ const columns: DataTableColumns<PhongResponse> = [
                   )
                 }
               )
-            : null,
-          h('div', { style: 'font-weight: 500;' }, row.ten)
-        ]
-      )
+              : null,
+            h('div', { style: 'font-weight: 500;' }, row.ten)
+          ]
+        )
+      },
     },
-  },
-  {
-    title: 'Loại phòng',
-    align: 'center',
-    key: 'loaiPhong',
-    render: row => row.loaiPhong || '-',
-  },
-  {
-    title: () => {
-      const isActive = sortBy.value === 'price'
-      const icon = isActive ? (sortOrder.value === 'asc' ? ' ↑' : ' ↓') : ' ↕'
-      const opacity = isActive ? '1' : '0.3'
-      return h(
-        'div',
-        {
-          onClick: () => handleSort('price'),
-          style: `cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 4px;`,
-        },
-        [
-          h('span', 'Giá'),
-          h('span', { style: `opacity: ${opacity}; font-size: 14px;` }, icon),
-        ],
-      )
+    {
+      title: 'Loại phòng',
+      align: 'center',
+      key: 'loaiPhong',
+      render: row => row.loaiPhong || '-',
     },
-    align: 'center',
-    key: 'price',
-    render: row => `${row.price?.toLocaleString('vi-VN')} VNĐ`,
-  },
-  {
-    title: () => {
-      const isActive = sortBy.value === 'sucChua'
-      const icon = isActive ? (sortOrder.value === 'asc' ? ' ↑' : ' ↓') : ' ↕'
-      const opacity = isActive ? '1' : '0.3'
-      return h(
-        'div',
-        {
-          onClick: () => handleSort('sucChua'),
-          style: `cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 4px;`,
-        },
-        [
-          h('span', 'Sức chứa (cơ bản~tối đa)'),
-          h('span', { style: `opacity: ${opacity}; font-size: 14px;` }, icon),
-        ],
-      )
+    {
+      title: () => {
+        const isActive = sortBy.value === 'price'
+        const icon = isActive ? (sortOrder.value === 'asc' ? ' ↑' : ' ↓') : ' ↕'
+        const opacity = isActive ? '1' : '0.3'
+        return h(
+          'div',
+          {
+            onClick: () => handleSort('price'),
+            style: `cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 4px;`,
+          },
+          [
+            h('span', 'Giá'),
+            h('span', { style: `opacity: ${opacity}; font-size: 14px;` }, icon),
+          ],
+        )
+      },
+      align: 'center',
+      key: 'price',
+      render: row => `${row.price?.toLocaleString('vi-VN')} VNĐ`,
     },
-    align: 'center',
-    key: 'sucChua',
-    render: row => `${getCapacityRange(row)} người`,
-  },
-  {
-    title: 'Trạng thái phòng',
-    align: 'center',
-    key: 'trangThaiHoatDong',
-    render: (row) => {
-      const statusMap: Record<string, { label: string; type: 'success' | 'warning' | 'error' }> = {
-        DANG_HOAT_DONG: { label: 'Hoạt động', type: 'success' },
-        DANG_SUA: { label: 'Bảo trì', type: 'warning' },
-        NGUNG_HOAT_DONG: { label: 'Ngưng hoạt động', type: 'error' },
-      }
+    {
+      title: () => {
+        const isActive = sortBy.value === 'sucChua'
+        const icon = isActive ? (sortOrder.value === 'asc' ? ' ↑' : ' ↓') : ' ↕'
+        const opacity = isActive ? '1' : '0.3'
+        return h(
+          'div',
+          {
+            onClick: () => handleSort('sucChua'),
+            style: `cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 4px;`,
+          },
+          [
+            h('span', 'Sức chứa (cơ bản~tối đa)'),
+            h('span', { style: `opacity: ${opacity}; font-size: 14px;` }, icon),
+          ],
+        )
+      },
+      align: 'center',
+      key: 'sucChua',
+      render: row => `${getCapacityRange(row)} người`,
+    },
+    {
+      title: 'Trạng thái ',
+      align: 'center',
+      key: 'trangThaiHoatDong',
+      render: (row) => {
+        const statusMap: Record<string, { label: string; type: 'success' | 'warning' | 'error' }> = {
+          DANG_HOAT_DONG: { label: 'Hoạt động', type: 'success' },
+          DANG_SUA: { label: 'Bảo trì', type: 'warning' },
+          NGUNG_HOAT_DONG: { label: 'Ngưng hoạt động', type: 'error' },
+        }
 
-      const status = statusMap[row.trangThaiHoatDong] || { label: row.trangThaiHoatDong, type: 'info' }
-      return h(NTag, { type: status.type }, { default: () => status.label })
+        const status = statusMap[row.trangThaiHoatDong] || { label: row.trangThaiHoatDong, type: 'info' }
+        return h(NTag, { type: status.type }, { default: () => status.label })
+      },
     },
-  },
-  {
-    title: 'Thao tác',
-    align: 'center',
-    key: 'actions',
-    render: row =>
-      h(NSpace, { justify: 'center' }, {
-        default: () => [
-          h(
-            NButton,
-            { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
-            { default: () => 'Sửa' },
-          ),
-          h(NPopconfirm, { onPositiveClick: () => handleDeleteRoom(row.id) }, {
-            default: () => 'Xác nhận xóa phòng?',
-            trigger: () =>
-              h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' }),
-          }),
-        ],
-      }),
-  },
-]
+    {
+      title: 'Thao tác',
+      align: 'center',
+      key: 'actions',
+      render: row =>
+        h(NSpace, { justify: 'center' }, {
+          default: () => [
+            h(
+              NButton,
+              { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
+              { default: () => 'Sửa' },
+            ),
+            h(NPopconfirm, { onPositiveClick: () => handleDeleteRoom(row.id), positiveText: 'Xác nhận', negativeText: 'Hủy' }, {
+              default: () => 'Xác nhận xóa phòng?',
+              trigger: () =>
+                h(NButton, { size: 'small', type: 'error' }, { default: () => 'Xóa' }),
+            }),
+          ],
+        }),
+    },
+  ]
 
-onMounted(() => {
-  fetchRooms()
-  fetchLoaiPhong()
-  fetchTags()
-})
+  onMounted(() => {
+    fetchRooms()
+    fetchLoaiPhong()
+    fetchTags()
+  })
 </script>
 
 <template>
@@ -509,53 +520,23 @@ onMounted(() => {
           </n-form-item-gi>
 
           <n-form-item-gi :span="6" label="Giá từ" path="giaMin">
-            <NInputNumber
-              v-model:value="model.giaMin"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.giaMin" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="6" label="Đến" path="giaMax">
-            <NInputNumber
-              v-model:value="model.giaMax"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.giaMax" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="6" label="Sức chứa từ" path="sucChuaMin">
-            <NInputNumber
-              v-model:value="model.sucChuaMin"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.sucChuaMin" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="6" label="Đến" path="sucChuaMax">
-            <NInputNumber
-              v-model:value="model.sucChuaMax"
-              placeholder="0"
-              :min="0"
-              :show-button="false"
-              clearable
-            />
+            <NInputNumber v-model:value="model.sucChuaMax" placeholder="0" :min="0" :show-button="false" clearable />
           </n-form-item-gi>
 
           <n-form-item-gi :span="12" label="Lọc theo Tags" path="tagIds">
-            <NSelect
-              v-model:value="model.tagIds"
-              :options="tagOptions"
-              placeholder="Chọn tags"
-              multiple
-              clearable
-            />
+            <NSelect v-model:value="model.tagIds" :options="tagOptions" placeholder="Chọn tags" multiple clearable />
           </n-form-item-gi>
 
           <n-gi :span="24" class="flex justify-end gap-3">
@@ -585,41 +566,25 @@ onMounted(() => {
           </NButton>
         </div>
 
-        <n-data-table
-          :columns="columns"
-          :data="listData"
-          :loading="loading"
-          :row-key="(row: PhongResponse) => row.id"
-          :expanded-row-keys="expandedRowKeys"
-          @update:expanded-row-keys="(keys: string[]) => expandedRowKeys = keys"
+        <n-data-table :columns="columns" :data="listData" :loading="loading" :row-key="(row: PhongResponse) => row.id"
+          :expanded-row-keys="expandedRowKeys" @update:expanded-row-keys="(keys: string[]) => expandedRowKeys = keys"
           :row-props="(row: PhongResponse) => {
             return {
               style: 'cursor: pointer;',
               onClick: () => handleRowClick(row)
             }
-          }"
-        />
+          }" />
 
-        <n-pagination
-          v-model:page="currentPage"
-          :page-count="Math.ceil(totalItems / pageSize)"
-          :page-size="pageSize"
-          show-size-picker
-          :page-sizes="[10, 20, 30, 50]"
-          @update:page="changePage"
-          @update:page-size="(size: number) => { pageSize = size; fetchRooms(1) }"
-        >
+        <n-pagination v-model:page="currentPage" :page-count="Math.ceil(totalItems / pageSize)" :page-size="pageSize"
+          show-size-picker :page-sizes="[10, 20, 30, 50]" @update:page="changePage"
+          @update:page-size="(size: number) => { pageSize = size; fetchRooms(1) }">
           <template #prefix>
             Tổng {{ totalItems }} phòng
           </template>
         </n-pagination>
 
-        <TableModal
-          v-model:visible="visible"
-          :type="modalType"
-          :modal-data="modalData"
-          @refresh="fetchRooms(currentPage)"
-        />
+        <TableModal v-model:visible="visible" :type="modalType" :modal-data="modalData"
+          @refresh="fetchRooms(currentPage)" />
       </NSpace>
     </n-card>
   </NSpace>

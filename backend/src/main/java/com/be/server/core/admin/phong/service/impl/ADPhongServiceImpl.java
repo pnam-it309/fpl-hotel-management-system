@@ -22,6 +22,8 @@ import com.be.server.infrastructure.constant.TrangThaiHoatDong;
 import com.be.server.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -133,14 +135,16 @@ public class ADPhongServiceImpl implements ADPhongService {
             return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Không tìm thấy loại phòng");
         }
 
-        if (phong.getTang() < 1 || phong.getTang() > 3 ) {
+        if (phong.getTang() < 1 || phong.getTang() > 3) {
             return new ResponseObject<>(null, HttpStatus.OK, "Vị trí phòng không hợp lệ");
         }
 
         LoaiPhong loaiPhong = optionalLoaiPhong.get();
 
         addPhong.setTang(phong.getTang());
-        addPhong.setTrangThaiHoatDong(TrangThaiHoatDong.DANG_HOAT_DONG);
+        addPhong.setTrangThaiHoatDong(
+                phong.getTrangThaiPhong() != null ? phong.getTrangThaiPhong() : TrangThaiHoatDong.DANG_HOAT_DONG
+        );
         addPhong.setLoaiPhong(loaiPhong);
 
         Phong savedPhong = adPhongRepository.save(addPhong);
@@ -161,12 +165,44 @@ public class ADPhongServiceImpl implements ADPhongService {
     }
 
     @Override
+    @Transactional
     public ResponseObject<?> deletePhong(String id) {
-        return null;
+
+        try {
+            // Check if room exists
+            Optional<Phong> optionalPhong = adPhongRepository.findById(id);
+            if (optionalPhong.isEmpty()) {
+                return new ResponseObject<>(null, HttpStatus.NOT_FOUND, "Không tìm thấy phòng cần xóa");
+            }
+
+            // Check for active bookings
+            if (adPhongRepository.existsActiveBookings(id)) {
+                return new ResponseObject<>(
+                        null,
+                        HttpStatus.CONFLICT,
+                        "Không thể xóa phòng vì phòng đang được sử dụng hoặc đã được đặt trước"
+                );
+            }
+
+            // Remove tag relations first to avoid FK constraint
+            adPhongTagRepository.deleteByPhongId(id);
+
+            // Delete the room
+            adPhongRepository.deleteById(id);
+
+            return new ResponseObject<>(null, HttpStatus.OK, "Xóa phòng thành công");
+        } catch (DataIntegrityViolationException | ConstraintViolationException e) {
+            // Ràng buộc dữ liệu (FK) ngăn không cho xóa
+            log.warn("Không thể xóa phòng do ràng buộc dữ liệu: {}", e.getMessage());
+            return new ResponseObject<>(null, HttpStatus.CONFLICT, "Không thể xóa phòng do đang được tham chiếu bởi dữ liệu khác");
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa phòng: {}", e.getMessage(), e);
+            return new ResponseObject<>(null, HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi khi xóa phòng");
+        }
     }
 
     @Override
-    public ResponseObject<?> getAllLoaiPhong(){
+    public ResponseObject<?> getAllLoaiPhong() {
         List<LoaiPhongResponse> responses = adLoaiPhongRepository.getAllLoaiPhong();
         return new ResponseObject<>(responses, HttpStatus.OK, "lấy thành công loại phòng");
     }
@@ -176,7 +212,7 @@ public class ADPhongServiceImpl implements ADPhongService {
     public ResponseObject<?> updatePhong(String id, ADUpdatePhongRequest request) {
         Optional<Phong> existingPhong = adPhongRepository.findById(id);
         if (existingPhong.isEmpty()) {
-            return ResponseObject.errorForward("Không tìm thấy phòng có id: " +id, HttpStatus.NOT_FOUND);
+            return ResponseObject.errorForward("Không tìm thấy phòng có id: " + id, HttpStatus.NOT_FOUND);
         }
 
         Phong existingPhong1 = existingPhong.get();
@@ -186,7 +222,7 @@ public class ADPhongServiceImpl implements ADPhongService {
             return ResponseObject.errorForward("Tên phòng đã tồn tại", HttpStatus.CONFLICT);
         }
 
-        if (request.getTang() < 1  || request.getTang() > 3){
+        if (request.getTang() < 1 || request.getTang() > 3) {
             return ResponseObject.errorForward("Vị trí phòng không hợp lệ", HttpStatus.BAD_REQUEST);
         }
 
@@ -222,7 +258,7 @@ public class ADPhongServiceImpl implements ADPhongService {
     @Override
     public ResponseObject<?> getPhongById(String id) {
         Optional<ADPhongDetail> phongDetail = adPhongRepository.getPhongDetailById(id);
-        if(phongDetail.isEmpty()){
+        if (phongDetail.isEmpty()) {
             return ResponseObject.errorForward("Không tìm thấy phòng có id: " + id, HttpStatus.NOT_FOUND);
         }
 

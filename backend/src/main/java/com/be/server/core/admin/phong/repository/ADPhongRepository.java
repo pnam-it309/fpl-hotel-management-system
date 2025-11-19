@@ -6,8 +6,10 @@ import com.be.server.core.admin.phong.model.response.PhongProjection;
 import com.be.server.entity.Phong;
 import com.be.server.infrastructure.constant.TrangThaiHoatDong;
 import com.be.server.repository.PhongRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -118,6 +120,13 @@ public interface ADPhongRepository extends PhongRepository {
 
     Optional<Phong> findByTen(String ten);
 
+    @Query("SELECT COUNT(c) > 0 FROM ChiTietDatPhong c WHERE c.room.id = :phongId AND c.status_chi_tiet IN ('CHECKIN', 'BOOKED')")
+    boolean existsActiveBookings(@Param("phongId") String phongId);
+
+    @Modifying
+    @Query("DELETE FROM Phong p WHERE p.id = :id")
+    @Transactional
+    void deleteById(@Param("id") String id);
 
 }
 

@@ -39,7 +39,7 @@ export interface AddPhongRequest {
   ten: string
   idLoaiPhong: string
   tang: number
-  trangThaiHoatDong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
+  trangThaiPhong: 'DANG_HOAT_DONG' | 'NGUNG_HOAT_DONG' | 'DANG_SUA'
   tagIds?: string[]
 }
 
@@ -119,8 +119,8 @@ export async function getAllRooms(params: ParamsGetRoom) {
 export async function deleteRoom(id: string) {
   try {
     const res = (await request({
-      url: `${API_LE_TAN_PHONG}/changeStatus/${id}`,
-      method: 'PUT',
+      url: `${API_LE_TAN_PHONG}/${id}`,
+      method: 'DELETE',
     })) as AxiosResponse<DefaultResponse<any>>
 
     return res.data

@@ -244,7 +244,7 @@ const columns: DataTableColumns<TagResponse> = [
             { size: 'small', type: 'primary', onClick: () => handleEditTable(row) },
             { default: () => 'Sửa' },
           ),
-          h(NPopconfirm, { onPositiveClick: () => handleChangeStatus(row.id) }, {
+          h(NPopconfirm, { onPositiveClick: () => handleChangeStatus(row.id),positiveText: 'Xác nhận', negativeText: 'Hủy' }, {
             default: () => 'Xác nhận thay đổi trạng thái tag?',
             trigger: () =>
               h(NButton, { size: 'small', type: 'error' }, { default: () => 'Thay đổi' }),
