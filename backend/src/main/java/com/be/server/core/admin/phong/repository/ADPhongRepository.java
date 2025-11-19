@@ -1,6 +1,7 @@
 package com.be.server.core.admin.phong.repository;
 
 
+import com.be.server.core.admin.phong.model.response.ADPhongDetail;
 import com.be.server.core.admin.phong.model.response.PhongProjection;
 import com.be.server.entity.Phong;
 import com.be.server.infrastructure.constant.TrangThaiHoatDong;
