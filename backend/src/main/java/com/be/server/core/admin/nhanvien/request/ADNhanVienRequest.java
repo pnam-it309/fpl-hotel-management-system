@@ -47,4 +47,6 @@ public class ADNhanVienRequest {
 
     private String matKhau;
 
+    // Vai trò (ADMIN/STAFF) do FE gửi qua FormData
+    private String vaiTro;
 }
