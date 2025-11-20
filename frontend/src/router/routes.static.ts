@@ -64,6 +64,37 @@ export const staticRoutes: AppRoute.RowRoute[] = [
     pid: 10,
   },
   {
+    name: 'personnel',
+    path: '/personnel',
+    title: 'Personnel Management',
+    requiresAuth: true,
+    icon: 'icon-park-outline:id-card',
+    menuType: 'dir',
+    componentPath: null,
+    id: 50,
+    pid: null,
+  },
+  {
+    name: 'employee',
+    path: '/personnel/employee',
+    title: 'Employee Management',
+    requiresAuth: true,
+    icon: 'mdi:account-tie',
+    componentPath: '/nhansu/nhanvien/index.vue',
+    id: 51,
+    pid: 50,
+  },
+  {
+    name: 'customer',
+    path: '/personnel/customer',
+    title: 'Customer Management',
+    requiresAuth: true,
+    icon: 'mdi:account-group-outline',
+    componentPath: '/nhansu/khachhang/index.vue',
+    id: 52,
+    pid: 50,
+  },
+  {
     name: 'datPhong',
     path: '/letan/datphong',
     title: 'Đăt phòng',
@@ -85,3 +116,4 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   },
 
 ]
+
