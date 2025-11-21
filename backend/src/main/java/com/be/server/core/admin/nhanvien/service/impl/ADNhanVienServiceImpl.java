@@ -121,7 +121,10 @@ public class ADNhanVienServiceImpl implements ADNhanVienService {
 
                 nhanVien.setCccd(request.getCccd());
 
-                nhanVien.setChucVu(EntityRole.STAFF);
+                // Set vai trò nếu FE truyền lên (ADMIN/STAFF); nếu null thì giữ nguyên
+                if (request.getVaiTro() != null && !request.getVaiTro().isEmpty()) {
+                    nhanVien.setChucVu("ADMIN".equalsIgnoreCase(request.getVaiTro()) ? EntityRole.ADMIN : EntityRole.STAFF);
+                }
 
                 nhanVien.setStatus(EntityStatus.ACTIVE);    
 
@@ -178,7 +181,12 @@ public class ADNhanVienServiceImpl implements ADNhanVienService {
 
         nhanVien.setMatKhau("$2y$10$ey6ASnw6etj4YQtRFKZTjOlzjynNjDYgKXzf9/LDibTIXjEOdOgwa");
 
-        nhanVien.setChucVu(EntityRole.STAFF);
+        // Set vai trò theo request nếu có, mặc định STAFF
+        if (request.getVaiTro() != null && !request.getVaiTro().isEmpty()) {
+            nhanVien.setChucVu("ADMIN".equalsIgnoreCase(request.getVaiTro()) ? EntityRole.ADMIN : EntityRole.STAFF);
+        } else {
+            nhanVien.setChucVu(EntityRole.STAFF);
+        }
 
         nhanVien.setStatus(EntityStatus.ACTIVE);
 
@@ -215,30 +223,26 @@ public class ADNhanVienServiceImpl implements ADNhanVienService {
 
     @Override
     public ResponseObject<?> changeNhanVienStatus(String id) {
-        Optional<NhanVien> nemberOptional = adNhanVienRepository.findById(id);
-
-        nemberOptional.map(nember -> {
-            nember.setStatus(nember.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-            return new ResponseObject(adNhanVienRepository.save(nember), HttpStatus.OK, "Thay đổi trạng thái thành công");
-        });
-
-        return nemberOptional
-                .map(product -> ResponseObject.successForward(HttpStatus.OK, "Đổi trạng thái thành công"))
-                .orElseGet(() -> ResponseObject.successForward(HttpStatus.NOT_FOUND, "Không tìm nhân viên "));
+        Optional<NhanVien> optional = adNhanVienRepository.findById(id);
+        if (optional.isEmpty()) {
+            return ResponseObject.successForward(HttpStatus.NOT_FOUND, "Không tìm nhân viên ");
+        }
+        NhanVien nv = optional.get();
+        nv.setStatus(nv.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        nv = adNhanVienRepository.save(nv);
+        return new ResponseObject<>(nv, HttpStatus.OK, "Đổi trạng thái thành công");
     }
 
     @Override
     public ResponseObject<?> changeNhanVienRole(String id) {
-        Optional<NhanVien> nemberOptional = adNhanVienRepository.findById(id);
-
-        nemberOptional.map(nember -> {
-            nember.setChucVu(nember.getChucVu() == EntityRole.ADMIN ? EntityRole.STAFF : EntityRole.ADMIN);
-            return new ResponseObject(adNhanVienRepository.save(nember), HttpStatus.OK, "Thay đổi vai trò nhân viên thành công");
-        });
-
-        return nemberOptional
-                .map(product -> ResponseObject.successForward(HttpStatus.OK, "Đổi vai trò nhân viên thành công"))
-                .orElseGet(() -> ResponseObject.successForward(HttpStatus.NOT_FOUND, "Không tìm nhân viên "));
+        Optional<NhanVien> optional = adNhanVienRepository.findById(id);
+        if (optional.isEmpty()) {
+            return ResponseObject.successForward(HttpStatus.NOT_FOUND, "Không tìm nhân viên ");
+        }
+        NhanVien nv = optional.get();
+        nv.setChucVu(nv.getChucVu() == EntityRole.ADMIN ? EntityRole.STAFF : EntityRole.ADMIN);
+        nv = adNhanVienRepository.save(nv);
+        return new ResponseObject<>(nv, HttpStatus.OK, "Đổi vai trò nhân viên thành công");
     }
 
     @Override
