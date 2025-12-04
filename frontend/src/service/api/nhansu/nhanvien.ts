@@ -7,16 +7,20 @@ export interface NhanVienListParams {
   page?: number
   size?: number
   q?: string
+  orderBy?: string
+  sortBy?: string
+  vaiTro?: string
+  gioiTinh?: string
 }
 
 export enum EntityRole {
-  QUAN_LY = 'QUAN_LY',
-  NHAN_VIEN = 'NHAN_VIEN'
+  ADMIN = 'ADMIN',
+  STAFF = 'STAFF'
 }
 
 export enum EntityVaiTro {
-  QUAN_LY = 'QUAN_LY',
-  LE_TAN = 'LE_TAN',
+  NHAN_VIEN = 'NHAN_VIEN',
+  QUAN_LY = 'QUAN_LY'
 }
 
 export interface NhanVien {
@@ -29,14 +33,20 @@ export interface NhanVien {
   ngaySinh: string | null;
   cccd: string;
   tinh: string;
-  huyen: string;
   xa: string;
   diaChi: string;
   chucVu: EntityRole | null;
-  vaiTro: EntityVaiTro | null;
+  vaitro: EntityVaiTro | null;
   matKhau?: string;
   avatar?: string;
-  trangThai?: string;
+  status?: string;
+}
+
+export interface PageableObject<T> {
+  data: T[]
+  totalPages: number
+  currentPage: number
+  totalElements: number
 }
 
 
@@ -45,21 +55,8 @@ export async function getAllNhanVien(params: NhanVienListParams) {
     url: API_ADMIN_NHAN_VIEN,
     method: 'GET',
     params,
-  })) as AxiosResponse<
-    DefaultResponse<{
-      data: NhanVien[]
-      totalPages: number
-      currentPage: number
-      totalElements: number
-    }>
-  >
-
-  return {
-    items: (res.data as any)?.data?.data ?? [],
-    totalItems: (res.data as any)?.data?.totalElements ?? 0,
-    totalPages: (res.data as any)?.data?.totalPages ?? 0,
-    currentPage: params.page || 1,
-  }
+  })) as AxiosResponse<DefaultResponse<PageableObject<NhanVien>>>
+  return res.data
 }
 
 export async function getNhanVienById(id: string) {
@@ -102,4 +99,12 @@ export async function checkDuplicate(field: 'cccd' | 'sdt' | 'email', value: str
     data: { field, value, excludeId },
   })) as AxiosResponse<DefaultResponse<{ exists: boolean }>>
   return (res.data as any)?.exists ?? false
+}
+
+export async function deleteNhanVien(id: string) {
+  const res = (await request({
+    url: `${API_ADMIN_NHAN_VIEN}/${id}`,
+    method: 'DELETE',
+  })) as AxiosResponse<DefaultResponse<any>>
+  return res.data
 }
