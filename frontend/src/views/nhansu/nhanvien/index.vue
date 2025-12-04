@@ -1,291 +1,595 @@
+<script setup lang="ts">
+import { h, ref, reactive, onMounted, watch } from "vue";
+import type { DataTableColumns, FormInst, DataTableRowKey } from "naive-ui";
+import {
+  NButton,
+  NInput,
+  NSelect,
+  NSpace,
+  NTag,
+  NDataTable,
+  NPagination,
+  NCard,
+  NAlert,
+  NForm,
+  NGrid,
+  NPopconfirm,
+  useMessage,
+  NIcon,
+  NFormItemGi,
+  NGi
+} from "naive-ui";
+import {
+
+} from "@vicons/fa";
+import {
+  Email,
+  Location,
+  User,
+  Calendar,
+  Identification,
+  UserRole,
+  Phone,
+  Barcode
+} from "@vicons/carbon";
+import TableModal from "./components/TableModal.vue";
+import {
+  getAllNhanVien,
+  deleteNhanVien,
+  changeNhanVienStatus,
+  type NhanVien,
+} from "@/service/api/nhansu/nhanvien";
+import { Html5Qrcode } from "html5-qrcode";
+import { parseCCCDQrContent } from "@/utils/cccd";
+import { getProvinces, getWards, convertFullAddress } from '@/service/api/address';
+
+// ---------------------- Types ----------------------
+
+interface SearchParams {
+  tuKhoa?: string;
+  vaiTro?: string;
+  chucVu?: string;
+  gioiTinh?: string;
+  page?: number;
+  size?: number;
+  orderBy?: string;
+  sortBy?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  q?: string;
+  tinh?: string;
+  xa?: string;
+  trangThai?: string;
+}
+
+// ---------------------- State ----------------------
+const loading = ref(false);
+const listData = ref<NhanVien[]>([]);
+const totalItems = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const errorMessage = ref("");
+const message = useMessage();
+
+// Form model for search
+const initialModel = {
+  tuKhoa: "",
+  vaiTro: "",
+  gioiTinh: "",
+  chucVu: "",
+  tinh: "",
+  xa: "",
+  trangThai: ""
+};
+
+const model = reactive({ ...initialModel });
+const formRef = ref<FormInst | null>(null);
+
+// Modal state
+const modalVisible = ref(false);
+const modalType = ref<"add" | "edit">("add");
+const modalData = ref<NhanVien | null>(null);
+
+// Address options
+const tinhOptions = ref<Array<{ label: string; value: string }>>([]);
+const xaOptions = ref<Array<{ label: string; value: string }>>([]);
+
+// Expanded rows
+const expandedRowKeys = ref<DataTableRowKey[]>([]);
+
+// Options
+const vaiTroOptions = [
+  { label: 'Nhân viên', value: 'NHAN_VIEN' },
+  { label: 'Quản lý', value: 'QUAN_LY' }
+]
+
+const gioiTinhOptions = [
+  { label: 'Nam', value: 'true' },
+  { label: 'Nữ', value: 'false' }
+]
+
+// ---------------------- Functions ----------------------
+
+function formatDate(date: any) {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('vi-VN')
+}
+
+async function handleModalProvinceChange(provinceCode: string) {
+  if (!provinceCode) {
+    xaOptions.value = []
+    return
+  }
+  try {
+    const wards = await getWards(provinceCode)
+    xaOptions.value = wards.map((w: any) => ({
+      label: w.ward_name,
+      value: w.ward_code
+    }))
+  } catch (e) {
+    console.error(e)
+    message.error('Không thể tải danh sách xã/phường')
+  }
+}
+
+async function processIdCardImage(file: File) {
+  try {
+    loading.value = true;
+    // Ensure element exists
+    if (!document.getElementById("reader-hidden-index")) {
+      const div = document.createElement("div");
+      div.id = "reader-hidden-index";
+      div.style.display = "none";
+      document.body.appendChild(div);
+    }
+
+    const html5QrCode = new Html5Qrcode("reader-hidden-index");
+    const decodedText = await html5QrCode.scanFile(file, true);
+    html5QrCode.clear();
+
+    const parsed = parseCCCDQrContent(decodedText);
+
+    if (parsed) {
+      // Map to NhanVien format
+      const nvData: any = {
+        ten: parsed.ten,
+        cccd: parsed.cccd,
+        ngaySinh: parsed.ngaySinh ? new Date(parsed.ngaySinh) : undefined,
+        gioiTinh: parsed.gioiTinh, // 'MALE' or 'FEMALE'
+        diaChi: parsed.diaChi,
+        tinh: '',
+        xa: ''
+      };
+
+      // Try to match province using API
+      const scannedAddress = parsed.diaChi;
+      console.log('Converting address:', scannedAddress);
+
+      try {
+        const converted = await convertFullAddress(scannedAddress);
+
+        if (converted) {
+          console.log('Converted Address:', converted);
+
+          nvData.tinh = converted.tinh_code;
+          nvData.diaChi = converted.dia_chi_duong;
+
+          // Fetch wards so they are available when modal opens
+          await handleModalProvinceChange(converted.tinh_code);
+
+          // Set ward if available
+          if (converted.xa_code) {
+            nvData.xa = converted.xa_code;
+          }
+
+        } else {
+          message.warning(`Không thể tự động phân tích địa chỉ: ${scannedAddress}`);
+        }
+      } catch (err) {
+        console.error('Error converting address:', err);
+      }
+
+      modalType.value = "add";
+      modalData.value = nvData;
+      modalVisible.value = true;
+      message.success("Đã quét thông tin từ ảnh");
+    } else {
+      message.warning("Không tìm thấy mã QR hợp lệ");
+    }
+  } catch (e) {
+    console.error(e);
+    message.error("Không thể đọc mã QR từ ảnh");
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleAddTable() {
+  modalType.value = 'add'
+  modalData.value = null
+  modalVisible.value = true
+}
+
+function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    processIdCardImage(file)
+  }
+  target.value = ''
+}
+
+function handleResetSearch() {
+  model.tuKhoa = ''
+  model.vaiTro = ''
+  model.gioiTinh = ''
+  model.tinh = ''
+  model.xa = ''
+  fetchNhanVien(1)
+}
+
+function changePage(page: number) {
+  currentPage.value = page
+  fetchNhanVien(page)
+}
+
+async function openEditModal(row: NhanVien) {
+  modalType.value = 'edit'
+  modalData.value = { ...row }
+  if (row.tinh) {
+    await handleModalProvinceChange(row.tinh)
+  }
+  modalVisible.value = true
+}
+
+async function handleChangeStatusAction(row: NhanVien) {
+  if (!row.id) return
+  try {
+    await changeNhanVienStatus(row.id)
+    message.success('Đổi trạng thái thành công')
+    fetchNhanVien(currentPage.value)
+  } catch (e: any) {
+    message.error(e.message || 'Lỗi khi đổi trạng thái')
+  }
+}
+
+function handleRowClick(row: NhanVien) {
+  if (!row.id) return
+  const index = expandedRowKeys.value.indexOf(row.id)
+  if (index > -1) {
+    expandedRowKeys.value.splice(index, 1)
+  } else {
+    expandedRowKeys.value.push(row.id)
+  }
+}
+
+// ---------------------- Fetch ----------------------
+async function fetchNhanVien(page = 1) {
+  try {
+    loading.value = true;
+    errorMessage.value = "";
+
+    const params: SearchParams = {
+      page: page,
+      size: pageSize.value,
+      q: model.tuKhoa || undefined,
+      tuKhoa: model.tuKhoa || undefined,
+      vaiTro: model.vaiTro || undefined,
+      chucVu: model.chucVu || undefined,
+      gioiTinh: model.gioiTinh || undefined,
+      tinh: model.tinh || undefined,
+      xa: model.xa || undefined,
+      trangThai: model.trangThai || undefined,
+      orderBy: "desc",
+      sortBy: "createdDate",
+    };
+
+    const response = await getAllNhanVien(params);
+
+    if (response && response.data) {
+      listData.value = (response.data.data as NhanVien[]) || [];
+      totalItems.value = response.data.totalElements || 0;
+      currentPage.value = response.data.currentPage + 1;
+    } else {
+      listData.value = [];
+      totalItems.value = 0;
+    }
+  } catch (error: any) {
+    console.error("Error fetching nhân viên:", error);
+    errorMessage.value =
+      error.message || "Có lỗi xảy ra khi tải dữ liệu nhân viên";
+    message.error(errorMessage.value);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// ---------------------- Watchers ----------------------
+watch(
+  () => model.tinh,
+  (newVal) => {
+    if (newVal) {
+      model.xa = "";
+    } else {
+      xaOptions.value = [];
+    }
+  }
+);
+
+let searchTimeout: number | null = null;
+watch(
+  [
+    () => model.tuKhoa,
+    () => model.vaiTro,
+    () => model.chucVu,
+    () => model.gioiTinh,
+    () => model.tinh,
+    () => model.xa,
+    () => model.trangThai,
+  ],
+  () => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    searchTimeout = window.setTimeout(() => {
+      fetchNhanVien(1);
+    }, 500);
+  },
+  { deep: true }
+);
+
+// ---------------------- Table columns ----------------------
+const columns: DataTableColumns<NhanVien> = [
+  {
+    type: 'expand',
+    renderExpand: (row) => {
+      return h(
+        'div',
+        { style: 'padding: 20px 32px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; margin: 8px 0;' },
+        [
+          h('div', { style: 'display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 32px; justify-content: start;' }, [
+            // Column 1
+            h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#8b5cf6' }, { default: () => h(Email) }),
+                  h('span', 'Email:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, row.email || '--')
+              ]),
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#ec4899' }, { default: () => h(Location) }),
+                  h('span', 'Địa chỉ:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, row.diaChi || '--')
+              ]),
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#10b981' }, { default: () => h(User) }),
+                  h('span', 'Giới tính:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, row.gioiTinh === true ? 'Nam' : row.gioiTinh === false ? 'Nữ' : 'Khác')
+              ]),
+            ]),
+
+            // Column 2
+            h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#f59e0b' }, { default: () => h(Calendar) }),
+                  h('span', 'Ngày sinh:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, formatDate(row.ngaySinh) || '--')
+              ]),
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#06b6d4' }, { default: () => h(Identification) }),
+                  h('span', 'CCCD:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, row.cccd || '--')
+              ]),
+              h('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+                h('div', { style: 'display: flex; align-items: center; gap: 8px; font-weight: 600; color: #374151; min-width: 150px;' }, [
+                  h(NIcon, { size: 18, color: '#3b82f6' }, { default: () => h(UserRole) }),
+                  h('span', 'Vai trò:')
+                ]),
+                h('span', { style: 'color: #6b7280;' }, row.vaitro === 'NHAN_VIEN' ? 'Nhân viên' : row.vaitro === 'QUAN_LY' ? 'Quản lý' : row.vaitro || '--')
+              ]),
+            ])
+          ])
+        ]
+      )
+    }
+  },
+  {
+    title: "Mã NV",
+    key: "ma",
+    align: "center",
+    width: 120,
+    render: (row) => {
+      return h(
+        'div',
+        { style: 'display: flex; align-items: center; gap: 8px; justify-content: center;' },
+        [
+          h(NIcon, { size: 16, color: '#667eea' }, { default: () => h(Barcode) }),
+          h('span', { style: 'font-weight: 500;' }, row.ma || "--")
+        ]
+      )
+    }
+  },
+  {
+    title: "Tên",
+    key: "ten",
+    align: "center",
+    render: (row) => {
+      return h('span', { style: 'font-weight: 600; color: #374151;' }, row.ten || "--")
+    }
+  },
+  {
+    title: "Số điện thoại",
+    key: "sdt",
+    align: "center",
+    width: 150,
+    render: (row) => {
+      return h(
+        'div',
+        { style: 'display: flex; align-items: center; gap: 8px; justify-content: center;' },
+        [
+          h(NIcon, { size: 14, color: '#10b981' }, { default: () => h(Phone) }),
+          h('span', row.sdt || "--")
+        ]
+      )
+    }
+  },
+  {
+    title: 'Trạng thái',
+    align: "center",
+    key: 'status',
+    width: 150,
+    render: row => {
+      const map: Record<string, { label: string; type: 'success' | 'warning' | 'error' | 'info' }> = {
+        ACTIVE: { label: 'Hoạt động', type: 'success' },
+        INACTIVE: { label: 'Ngưng hoạt động', type: 'error' }
+      }
+      const st = map[row.status as string] || { label: row.status || '-', type: 'info' }
+      return h(NTag, { type: st.type as any, bordered: false, round: true }, { default: () => st.label })
+    },
+  },
+  {
+    title: "Thao tác",
+    key: "actions",
+    align: "center",
+    width: 180,
+    fixed: "right",
+    render: (row) =>
+      h(
+        NSpace,
+        { justify: "center" },
+        {
+          default: () => [
+            h(
+              NButton,
+              {
+                size: "small",
+                type: "primary",
+                onClick: (e) => {
+                  e.stopPropagation();
+                  openEditModal(row);
+                },
+              },
+              { default: () => "Sửa" }
+            ),
+            h(
+              NPopconfirm,
+              {
+                onPositiveClick: () => handleChangeStatusAction(row),
+                positiveText: "Xác nhận",
+                negativeText: "Hủy",
+              },
+              {
+                default: () => `Bạn có chắc muốn ${row.status === 'ACTIVE' ? 'ngưng hoạt động' : 'kích hoạt'} nhân viên này?`,
+                trigger: () =>
+                  h(
+                    NButton,
+                    {
+                      size: "small",
+                      type: row.status === 'ACTIVE' ? "warning" : "success",
+                      onClick: (e) => e.stopPropagation()
+                    },
+                    { default: () => "Đổi trạng thái" }
+                  ),
+              }
+            ),
+          ],
+        }
+      ),
+  },
+];
+
+// ---------------------- Mounted ----------------------
+onMounted(async () => {
+  // Initial data fetch
+  await fetchNhanVien();
+
+  // Load provinces
+  try {
+    const provinces = await getProvinces();
+    tinhOptions.value = provinces.map((province) => ({
+      label: province.name,
+      value: province.province_code
+    }));
+  } catch (error) {
+    console.error("Error fetching provinces:", error);
+    message.error("Không thể tải danh sách tỉnh/thành phố");
+  }
+});
+</script>
+
 <template>
   <NSpace vertical size="large">
     <n-card>
-      <n-space vertical :size="8">
-        <n-input
-          v-model:value="state.keyword"
-          placeholder="Tìm theo tên, mã, hoặc số điện thoại..."
-          clearable
-        />
+      <n-form ref="formRef" :model="model" label-placement="left" :show-feedback="false">
+        <n-grid :cols="24" :x-gap="12" :y-gap="8">
+          <n-form-item-gi :span="8" label="Từ khóa" path="tuKhoa">
+            <NInput v-model:value="model.tuKhoa" placeholder="Nhập tên, email hoặc CCCD" clearable
+              @keyup.enter="fetchNhanVien(1)" @update:value="() => fetchNhanVien(1)" />
+          </n-form-item-gi>
 
-        <n-grid cols="2 s:2 m:2 l:2 xl:2" :x-gap="8" :y-gap="8">
-          <n-gi>
-            <n-select
-              v-model:value="state.gender"
-              :options="genderOptions"
-              placeholder="Giới tính"
-              clearable
-            />
+          <n-form-item-gi :span="6" label="Vai trò" path="vaiTro">
+            <NSelect v-model:value="model.vaiTro" :options="vaiTroOptions" placeholder="Chọn vai trò" clearable
+              filterable style="width: 100%" @update:value="() => fetchNhanVien(1)" />
+          </n-form-item-gi>
+
+          <n-form-item-gi :span="5" label="Giới tính" path="gioiTinh">
+            <NSelect v-model:value="model.gioiTinh" :options="gioiTinhOptions" placeholder="Chọn giới tính" clearable
+              style="width: 100%" @update:value="() => fetchNhanVien(1)" />
+          </n-form-item-gi>
+
+          <n-gi :span="5" class="flex items-center">
+            <NButton strong secondary @click="handleResetSearch">
+              <template #icon>
+              </template>
+              reset
+            </NButton>
           </n-gi>
-          <n-gi>
-            <n-select
-              v-model:value="state.role"
-              :options="roleOptions"
-              placeholder="Vai trò"
-              clearable
-            />
-          </n-gi>
-          
         </n-grid>
-
-        <div class="flex justify-end">
-          <n-button strong secondary @click="handleReset">Reset</n-button>
-        </div>
-      </n-space>
+      </n-form>
     </n-card>
 
     <n-card>
       <div class="flex gap-4 mb-3">
-        <n-button type="primary" @click="onAdd">Thêm nhân viên</n-button>
-      </div>
-      <div class="mb-3 flex items-center gap-2">
-        <span class="text-gray"></span>
-        <VueDraggable v-model="state.middleKeys" item-key="key" class="flex gap-2">
-          <template #item="{ element }">
-            <n-tag type="default" :bordered="false">{{ columnMap[element].title }}</n-tag>
-          </template>
-        </VueDraggable>
+        <NButton type="primary" @click="handleAddTable">Thêm nhân viên</NButton>
+        <input type="file" ref="fileInput" style="display: none" accept="image/*" @change="handleFileUpload" />
       </div>
 
-      <n-data-table
-        :columns="columns"
-        :data="rows"
-        :row-key="(row:any)=>row.id"
-        :bordered="true"
-        :single-line="false"
-        size="small"
-        :scroll-x="1000"
-        :loading="loading"
-      />
+      <n-alert v-if="errorMessage && listData.length === 0" type="warning" :title="errorMessage" />
+
+      <n-data-table :columns="columns" :data="listData" :loading="loading" :row-key="(row: NhanVien) => row.id || ''"
+        :expanded-row-keys="expandedRowKeys"
+        @update:expanded-row-keys="(keys: DataTableRowKey[]) => expandedRowKeys = keys" :row-props="(row: NhanVien) => {
+          return {
+            style: 'cursor: pointer;',
+            onClick: () => handleRowClick(row)
+          }
+        }" />
 
       <div class="mt-4 flex justify-end">
-        <n-pagination
-          v-model:page="currentPage"
-          :page-count="Math.ceil(totalItems / pageSize) || 1"
-          :page-size="pageSize"
-          size="small"
-          :page-slot="7"
-          prev-label="Trước"
-          next-label="Sau"
-          show-size-picker
-          :page-sizes="[10, 20, 30, 50]"
-          @update:page="changePage"
-          @update:page-size="(s:number)=>{ pageSize=s; fetchList(1) }"
-        >
-          <template #prefix>
-            Tổng {{ totalItems }} nhân viên
-          </template>
+        <n-pagination v-model:page="currentPage" :page-count="Math.ceil(totalItems / pageSize)" :page-size="pageSize"
+          show-size-picker :page-sizes="[10, 20, 30, 50]" @update:page="changePage" @update:page-size="
+            (size) => {
+              pageSize = size;
+              fetchNhanVien(1);
+            }
+          ">
+          <template #prefix>Tổng {{ totalItems }} nhân viên</template>
         </n-pagination>
       </div>
     </n-card>
 
-    <Tablemodal v-model:show="state.showModal" :edit-id="state.editId" @refresh="fetchList(currentPage)" />
+    <TableModal v-model:visible="modalVisible" :type="modalType" :modal-data="modalData"
+      :vai-tro-options="vaiTroOptions" :tinh-options="tinhOptions" :xa-options="xaOptions"
+      @refresh="fetchNhanVien(currentPage)" @province-change="handleModalProvinceChange" />
   </NSpace>
 </template>
-
-<script setup lang="ts">
-import { reactive, computed, ref, watch, onMounted, h } from 'vue'
-import { NButton, NCard, NDataTable, NGrid, NGi, NInput, NPagination, NSelect, NSpace, NTag } from 'naive-ui'
-import { VueDraggable } from 'vue-draggable-plus'
-import Tablemodal from './components/TableModal.vue'
-import { getAllNhanVien, changeNhanVienRole } from '@/service/api/nhansu/nhanvien'
-
-// Định nghĩa cột cố định và map cột có thể kéo trước để dùng type
-const expandColumn = {
-  type: 'expand' as const,
-  expandable: () => true,
-  renderExpand: (row: any) => {
-    return h(
-      'div',
-      { style: 'background:#eef4ff;padding:16px;border-radius:8px' },
-      [
-        h('div', { style: 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px' }, [
-          h('div', [h('strong', 'Mã:'), ' ', row.code || '-']),
-          h('div', [h('strong', 'Họ tên:'), ' ', row.employee || '-']),
-          h('div', [h('strong', 'Giới tính:'), ' ', row._gender || '-']),
-          h('div', [h('strong', 'Vai trò:'), ' ', row.role || '-']),
-          h('div', [h('strong', 'SĐT:'), ' ', row._sdt || '-']),
-          h('div', [h('strong', 'Email:'), ' ', row._email || '-']),
-          h('div', [h('strong', 'CCCD:'), ' ', row._cccd || '-']),
-          h('div', [h('strong', 'Trạng thái:'), ' ', row.status || '-']),
-          //h('div', [h('strong', 'Tên đăng nhập:'), ' ', row._user || '-']),
-        ]),
-      ]
-    )
-  },
-}
-const codeColumn = { title: 'Mã', key: 'code', width: 120, fixed: 'left' as const }
-const actionsColumn = {
-  title: 'Thao tác',
-  key: 'actions',
-  width: 160,
-  fixed: 'right' as const,
-  render: (row: any) => {
-    return [
-      h(
-        NButton,
-        {
-          size: 'small',
-          type: 'success',
-          onClick: () => onEdit(row.id),
-        },
-        { default: () => 'Sửa' }
-      ),
-      h(
-        NButton,
-        {
-          size: 'small',
-          type: 'error',
-          style: 'margin-left:8px',
-          onClick: () => onToggleRole(row.id),
-        },
-        { default: () => 'Thay đổi' }
-      ),
-    ]
-  },
-}
-
-const columnMap: Record<string, any> = {
-  employee: { title: 'Nhân viên', key: 'employee', width: 220 },
-  contact: { title: 'Liên hệ', key: 'contact', width: 240 },
-  role: { title: 'Vai trò', key: 'role', width: 140 },
-  status: { title: 'Trạng thái', key: 'status', width: 140 },
-}
-
-type ColumnKeys = keyof typeof columnMap
-
-const state = reactive({
-  keyword: '',
-  gender: null as string | null,
-  role: null as string | null,
-  showModal: false,
-  editId: null as string | null,
-  // danh sách các key cột có thể kéo thả (giữ nguyên expand, mã đầu và thao tác cuối)
-  middleKeys: ['employee', 'contact', 'role', 'status'] as ColumnKeys[],
-})
-
-const loading = ref(false)
-const listData = ref<any[]>([])
-const totalItems = ref(0)
-const currentPage = ref(1)
-let pageSize = ref(10)
-
-const genderOptions = [
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Nam', value: 'male' },
-  { label: 'Nữ', value: 'female' },
-]
-
-const roleOptions = [
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Lễ tân', value: 'receptionist' },
-  { label: 'Quản lý', value: 'manager' },
-]
-
-const columns = computed(() => {
-  return [expandColumn, codeColumn, ...state.middleKeys.map(k => columnMap[k as string]), actionsColumn]
-})
-
-function onAdd() {
-  state.editId = null
-  state.showModal = true
-}
-
-function onEdit(id: string) {
-  state.editId = id
-  state.showModal = true
-}
-
-function handleReset() {
-  state.keyword = ''
-  state.gender = null
-  state.role = null
-}
-
-const rows = computed(() =>
-  listData.value.map((it: any) => ({
-    id: it.id,
-    code: it.ma,
-    employee: it.ten,
-    contact: [it.sdt, it.email].filter(Boolean).join(' • '),
-    // Vai trò: ưu tiên chucVu (ADMIN/STAFF) từ BE; fallback các định dạng cũ
-    role: (() => {
-      const cv = (it.chucVu ?? it.vaiTro)
-      if (typeof cv === 'string') {
-        const up = cv.toUpperCase()
-        if (up === 'ADMIN' || up === 'QUAN_LY' || up === 'MANAGER') return 'Quản lý'
-        if (up === 'STAFF' || up === 'LE_TAN' || up === 'RECEPTIONIST') return 'Lễ tân'
-        return cv
-      }
-      if (typeof cv === 'number') return cv === 0 ? 'Quản lý' : 'Lễ tân'
-      return '-'
-    })(),
-    // Trạng thái: map enum ACTIVE/INACTIVE, hoặc số/boolean
-    status: (() => {
-      const st = it.status ?? it.trangThai ?? it.hoatDong
-      if (typeof st === 'string') {
-        const up = st.toUpperCase()
-        if (up === 'ACTIVE') return 'Hoạt động'
-        if (up === 'INACTIVE') return 'Ngưng hoạt động'
-        return st
-      }
-      if (typeof st === 'number') return st === 1 ? 'Hoạt động' : 'Ngưng hoạt động'
-      if (typeof st === 'boolean') return st ? 'Hoạt động' : 'Ngưng hoạt động'
-      return '-'
-    })(),
-    // Dữ liệu chi tiết cho panel mở rộng
-    _gender: (() => {
-      const g = (it.gioiTinh !== undefined ? it.gioiTinh : it.gioiTimh)
-      if (typeof g === 'boolean') return g ? 'Nam' : 'Nữ'
-      if (typeof g === 'number') return g === 1 ? 'Nam' : g === 0 ? 'Nữ' : '-'
-      if (typeof g === 'string') {
-        const up = g.toUpperCase()
-        if (up === 'MALE' || up === 'NAM') return 'Nam'
-        if (up === 'FEMALE' || up === 'NU' || up === 'NỮ') return 'Nữ'
-        return '-'
-      }
-      return '-'
-    })(),
-    _sdt: it.sdt || '',
-    _email: it.email || '',
-    _cccd: it.cccd || '-',
-    _user: it.user || '-',
-    actions: '',
-  }))
-)
-
-async function fetchList(page = 1) {
-  loading.value = true
-  try {
-    const res = await getAllNhanVien({ page, size: pageSize.value, q: state.keyword || undefined })
-    listData.value = res.items
-    totalItems.value = res.totalItems
-    currentPage.value = res.currentPage
-  } catch (e:any) {
-    listData.value = []
-    totalItems.value = 0
-  } finally {
-    loading.value = false
-  }
-}
-
-function changePage(page:number){
-  fetchList(page)
-}
-
-async function onToggleRole(id: string) {
-  try {
-    await changeNhanVienRole(id)
-    ;(window as any).$message?.success?.('Đã đổi vai trò')
-    fetchList(currentPage.value)
-  } catch (e:any) {
-    ;(window as any).$message?.error?.(e?.message || 'Thao tác thất bại')
-  }
-}
-
-watch(() => state.keyword, () => fetchList(1))
-onMounted(() => fetchList(1))
-</script>
-
-<style scoped>
-</style>

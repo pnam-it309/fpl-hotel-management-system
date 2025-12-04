@@ -7,46 +7,63 @@ export interface NhanVienListParams {
   page?: number
   size?: number
   q?: string
+  orderBy?: string
+  sortBy?: string
+  vaiTro?: string
+  gioiTinh?: string
 }
 
-export interface NhanVienItem {
-  id: string
-  ma: string
-  ten: string
-  email?: string
-  sdt?: string
-  cccd?: string
-  gioiTinh?: string
-  vaiTro?: string
+export enum EntityRole {
+  ADMIN = 'ADMIN',
+  STAFF = 'STAFF'
 }
+
+export enum EntityVaiTro {
+  NHAN_VIEN = 'NHAN_VIEN',
+  QUAN_LY = 'QUAN_LY'
+}
+
+export interface NhanVien {
+  id?: string;
+  ma?: string;
+  ten: string;
+  sdt: string;
+  email: string;
+  gioiTinh: boolean | null;
+  ngaySinh: string | null;
+  cccd: string;
+  tinh: string;
+  xa: string;
+  diaChi: string;
+  chucVu: EntityRole | null;
+  vaitro: EntityVaiTro | null;
+  matKhau?: string;
+  avatar?: string;
+  status?: string;
+}
+
+export interface PageableObject<T> {
+  data: T[]
+  totalPages: number
+  currentPage: number
+  totalElements: number
+}
+
 
 export async function getAllNhanVien(params: NhanVienListParams) {
   const res = (await request({
     url: API_ADMIN_NHAN_VIEN,
     method: 'GET',
     params,
-  })) as AxiosResponse<
-    DefaultResponse<{
-      data: NhanVienItem[]
-      totalPages: number
-      currentPage: number
-      totalElements: number
-    }>
-  >
-
-  return {
-    items: (res.data as any)?.data?.data ?? [],
-    totalItems: (res.data as any)?.data?.totalElements ?? 0,
-    totalPages: (res.data as any)?.data?.totalPages ?? 0,
-    currentPage: params.page || 1,
-  }
+  })) as AxiosResponse<DefaultResponse<PageableObject<NhanVien>>>
+  return res.data
 }
 
 export async function getNhanVienById(id: string) {
   const res = (await request({
     url: `${API_ADMIN_NHAN_VIEN}/${id}`,
     method: 'GET',
-  })) as AxiosResponse<DefaultResponse<NhanVienItem>>
+  })) as AxiosResponse<DefaultResponse<NhanVien>>
   return res.data.data
 }
 
@@ -82,4 +99,12 @@ export async function checkDuplicate(field: 'cccd' | 'sdt' | 'email', value: str
     data: { field, value, excludeId },
   })) as AxiosResponse<DefaultResponse<{ exists: boolean }>>
   return (res.data as any)?.exists ?? false
+}
+
+export async function deleteNhanVien(id: string) {
+  const res = (await request({
+    url: `${API_ADMIN_NHAN_VIEN}/${id}`,
+    method: 'DELETE',
+  })) as AxiosResponse<DefaultResponse<any>>
+  return res.data
 }
