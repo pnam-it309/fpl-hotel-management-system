@@ -47,7 +47,7 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   {
     name: 'roomList',
     path: '/rooms/roomList',
-    title: 'Commonly used list',
+    title: 'Quản lý phòng',
     requiresAuth: true,
     icon: 'icon-park-outline:list-view',
     componentPath: '/letan/phong/index.vue',
@@ -77,7 +77,7 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   {
     name: 'personnel',
     path: '/personnel',
-    title: 'Personnel Management',
+    title: 'Quản lí nhân sự',
     requiresAuth: true,
     icon: 'icon-park-outline:id-card',
     menuType: 'dir',
@@ -88,7 +88,7 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   {
     name: 'employee',
     path: '/personnel/employee',
-    title: 'Employee Management',
+    title: 'Quản lí nhân viên',
     requiresAuth: true,
     icon: 'mdi:account-tie',
     componentPath: '/nhansu/nhanvien/index.vue',
@@ -98,7 +98,7 @@ export const staticRoutes: AppRoute.RowRoute[] = [
   {
     name: 'customer',
     path: '/personnel/customer',
-    title: 'Customer Management',
+    title: 'Quản lí khách hàng',
     requiresAuth: true,
     icon: 'mdi:account-group-outline',
     componentPath: '/nhansu/khachhang/index.vue',
