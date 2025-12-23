@@ -21,13 +21,13 @@ export function setupRouterGuard(router: Router) {
     // Determine whether there is a TOKEN and log in for authentication
     const isLogin = Boolean(local.get('accessToken'))
     if (!isLogin) {
-      if (to.name === 'login')
-        next({path: '/letan/datphong'})
-
-      if (to.name !== 'login') {
-        const redirect = to.name === '404' ? undefined : to.fullPath
-        next({ path: '/login', query: { redirect } })
+      if (to.name === 'login') {
+        next()
+        return
       }
+
+      const redirect = to.name === '404' ? undefined : to.fullPath
+      next({ path: '/login', query: { redirect } })
       return false
     }
 
