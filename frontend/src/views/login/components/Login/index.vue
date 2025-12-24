@@ -14,7 +14,8 @@ function toOtherForm(type: any) {
 const { t } = useI18n()
 const rules = computed(() => {
   return {
-    account: {
+  return {
+    email: {
       required: true,
       trigger: 'blur',
       message: t('login.accountRuleTip'),
@@ -27,7 +28,7 @@ const rules = computed(() => {
   }
 })
 const formValue = ref({
-  account: 'super',
+  email: 'admin@gmail.com',
   pwd: '123456',
 })
 const isRemember = ref(false)
@@ -40,13 +41,13 @@ function handleLogin() {
       return
 
     isLoading.value = true
-    const { account, pwd } = formValue.value
+    const { email, pwd } = formValue.value
 
     if (isRemember.value)
-      local.set('loginAccount', { account, pwd })
+      local.set('loginAccount', { email, pwd })
     else local.remove('loginAccount')
 
-    await authStore.login(account, pwd)
+    await authStore.login(email, pwd)
     isLoading.value = false
   })
 }
@@ -69,8 +70,8 @@ function checkUserAccount() {
       {{ $t('login.signInTitle') }}
     </n-h2>
     <n-form ref="formRef" :rules="rules" :model="formValue" :show-label="false" size="large">
-      <n-form-item path="account">
-        <n-input v-model:value="formValue.account" clearable :placeholder="$t('login.accountPlaceholder')" />
+      <n-form-item path="email">
+        <n-input v-model:value="formValue.email" clearable :placeholder="$t('login.accountPlaceholder')" />
       </n-form-item>
       <n-form-item path="pwd">
         <n-input v-model:value="formValue.pwd" type="password" :placeholder="$t('login.passwordPlaceholder')" clearable

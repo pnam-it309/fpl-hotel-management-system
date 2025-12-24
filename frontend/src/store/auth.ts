@@ -52,14 +52,14 @@ export const useAuthStore = defineStore('auth-store', {
     },
 
     /* User login */
-    async login(userName: string, password: string) {
+    async login(email: string, password: string) {
       try {
-        const { isSuccess, data } = await fetchLogin({ userName, password })
-        if (!isSuccess)
+        const res = await fetchLogin({ email, password })
+        if (!res || !res.isSuccess)
           return
 
         // Handling login information
-        await this.handleLoginInfo(data)
+        await this.handleLoginInfo(res.data)
       }
       catch (e) {
         console.warn('[Login Error]:', e)

@@ -90,6 +90,7 @@ export function createAlovaInstance(
       onError: (error, method) => {
         const tip = `[${method.type}] - [${method.url}] - ${error.message}`
         window.$message?.warning(tip)
+        return handleServiceResult({ message: error.message, errorType: 'Network Error' }, false)
       },
 
       onComplete: async (_method) => {
