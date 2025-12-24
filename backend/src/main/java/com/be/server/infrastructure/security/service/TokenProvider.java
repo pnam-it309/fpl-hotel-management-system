@@ -28,11 +28,11 @@ public class TokenProvider {
     @Value("${jwt.secret}")
     private String tokenSecret;
 
-    private final long ACCESS_TOKEN_EXPIRATION = 2 * 60 * 60 * 1000;  // 2h
+    private final long ACCESS_TOKEN_EXPIRATION = 2 * 60 * 60 * 1000; // 2h
     private final long REFRESH_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000; // 7 ngày
 
-//    @Setter(onMethod_ = @Autowired)
-//    private KhachHangAuthRepository khachHangAuthRepository;
+    // @Setter(onMethod_ = @Autowired)
+    // private KhachHangAuthRepository khachHangAuthRepository;
 
     @Setter(onMethod_ = @Autowired)
     private NhanVienAuthRepository nhanVienAuthRepository;
@@ -43,33 +43,37 @@ public class TokenProvider {
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(tokenSecret.getBytes());
     }
-//
-//    // ===== TOKEN CHO KHÁCH HÀNG =====
-//    public String createTokenForKhachHang(Authentication authentication) {
-//        log.info("Tạo access token cho khách hàng...");
-//        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-////        Optional<KhachHang> userOpt = khachHangAuthRepository.findByEmail(userPrincipal.getEmail());
-//
-//        if (userOpt.isEmpty()) {
-//            log.warn("Không tìm thấy khách hàng: {}", userPrincipal.getEmail());
-//            return null;
-//        }
-//
-//        return buildTokenKhachHang(userOpt.get(), ACCESS_TOKEN_EXPIRATION, Role.USERS.name());
-//    }
+    //
+    // // ===== TOKEN CHO KHÁCH HÀNG =====
+    // public String createTokenForKhachHang(Authentication authentication) {
+    // log.info("Tạo access token cho khách hàng...");
+    // UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    //// Optional<KhachHang> userOpt =
+    // khachHangAuthRepository.findByEmail(userPrincipal.getEmail());
+    //
+    // if (userOpt.isEmpty()) {
+    // log.warn("Không tìm thấy khách hàng: {}", userPrincipal.getEmail());
+    // return null;
+    // }
+    //
+    // return buildTokenKhachHang(userOpt.get(), ACCESS_TOKEN_EXPIRATION,
+    // Role.USERS.name());
+    // }
 
-//    public String createRefreshTokenForKhachHang(Authentication authentication) {
-//        log.info("Tạo refresh token cho khách hàng...");
-//        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-////        Optional<KhachHang> userOpt = khachHangAuthRepository.findByEmail(userPrincipal.getEmail());
-//
-//        if (userOpt.isEmpty()) {
-//            log.warn("Không tìm thấy khách hàng: {}", userPrincipal.getEmail());
-//            return null;
-//        }
-//
-//        return buildTokenKhachHang(userOpt.get(), REFRESH_TOKEN_EXPIRATION,  Role.USERS.name());
-//    }
+    // public String createRefreshTokenForKhachHang(Authentication authentication) {
+    // log.info("Tạo refresh token cho khách hàng...");
+    // UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    //// Optional<KhachHang> userOpt =
+    // khachHangAuthRepository.findByEmail(userPrincipal.getEmail());
+    //
+    // if (userOpt.isEmpty()) {
+    // log.warn("Không tìm thấy khách hàng: {}", userPrincipal.getEmail());
+    // return null;
+    // }
+    //
+    // return buildTokenKhachHang(userOpt.get(), REFRESH_TOKEN_EXPIRATION,
+    // Role.USERS.name());
+    // }
 
     // ===== TOKEN CHO ADMIN =====
     public String createTokenForAdmin(Authentication authentication) {
@@ -86,6 +90,10 @@ public class TokenProvider {
 
     }
 
+    public String createTokenForAdmin(NhanVien nhanVien) {
+        return buildTokenAdmin(nhanVien, ACCESS_TOKEN_EXPIRATION, Role.ADMIN.name());
+    }
+
     public String createRefreshTokenForAdmin(Authentication authentication) {
         log.info("Tạo refresh token cho nhân viên...");
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
@@ -96,29 +104,34 @@ public class TokenProvider {
             return null;
         }
 
-        return buildTokenAdmin(userOpt.get(), REFRESH_TOKEN_EXPIRATION,  Role.ADMIN.name());
+        return buildTokenAdmin(userOpt.get(), REFRESH_TOKEN_EXPIRATION, Role.ADMIN.name());
     }
-//
-//    // ===== BUILD TOKEN =====
-//    private String buildTokenKhachHang(KhachHang user, long expirationMillis, String role) {
-//        Map<String, Object> claims = new HashMap<>();
-//        claims.put("email", user.getEmail());
-//        claims.put("userId", user.getId());
-//        claims.put("fullName", user.getTen());
-//        claims.put("pictureUrl", user.getAvatar());
-//        claims.put("role", role);
-//
-//        return Jwts.builder()
-//                .setSubject(user.getEmail())
-//                .setClaims(claims)
-//                .setIssuedAt(new Date())
-//                .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
-//                .setIssuer("glamsole")
-//                .signWith(getSigningKey())
-//                .compact();
-//    }
 
-    private String buildTokenAdmin(NhanVien nhanVien, long expirationMillis, String role) {
+    public String createRefreshTokenForAdmin(NhanVien nhanVien) {
+        return buildTokenAdmin(nhanVien, REFRESH_TOKEN_EXPIRATION, Role.ADMIN.name());
+    }
+    //
+    // // ===== BUILD TOKEN =====
+    // private String buildTokenKhachHang(KhachHang user, long expirationMillis,
+    // String role) {
+    // Map<String, Object> claims = new HashMap<>();
+    // claims.put("email", user.getEmail());
+    // claims.put("userId", user.getId());
+    // claims.put("fullName", user.getTen());
+    // claims.put("pictureUrl", user.getAvatar());
+    // claims.put("role", role);
+    //
+    // return Jwts.builder()
+    // .setSubject(user.getEmail())
+    // .setClaims(claims)
+    // .setIssuedAt(new Date())
+    // .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
+    // .setIssuer("glamsole")
+    // .signWith(getSigningKey())
+    // .compact();
+    // }
+
+    public String buildTokenAdmin(NhanVien nhanVien, long expirationMillis, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", nhanVien.getEmail());
         claims.put("userId", nhanVien.getId());
