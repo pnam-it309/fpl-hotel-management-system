@@ -14,7 +14,6 @@ function toOtherForm(type: any) {
 const { t } = useI18n()
 const rules = computed(() => {
   return {
-  return {
     email: {
       required: true,
       trigger: 'blur',
