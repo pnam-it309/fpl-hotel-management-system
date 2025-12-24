@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      outDir: 'dist', 
+      outDir: 'dist',
       chunkSizeWarningLimit: 2000,
       reportCompressedSize: false, // Enable/disable gzip compressed size reporting
     },

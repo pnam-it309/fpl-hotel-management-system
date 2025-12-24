@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth-store', {
     /* User login */
     async login(email: string, password: string) {
       try {
-        if (email === 'admin@gmail.com' && password === '123456') { 
+        if (email === 'admin@gmail.com' && password === '123456') {
           window.$message.success('Lấy token thành công (Bypass Frontend)')
           const fakeAdmin: Api.Login.Info = {
             id: 1,
