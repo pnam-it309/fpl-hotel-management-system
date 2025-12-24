@@ -83,8 +83,13 @@ public class AuthController {
         try {
             httpSession.setAttribute("role", "ADMIN");
 
+            System.out.println("DEBUG LOGIN: Email=['" + loginRequest.getEmail() + "'], Password=['"
+                    + loginRequest.getPassword() + "']");
+
             // Bypass logic for hardcoded admin
-            if ("admin@gmail.com".equals(loginRequest.getEmail()) && "123456".equals(loginRequest.getPassword())) {
+            if (loginRequest.getEmail() != null && loginRequest.getPassword() != null &&
+                    "admin@gmail.com".equals(loginRequest.getEmail().trim()) &&
+                    "123456".equals(loginRequest.getPassword().trim())) {
                 com.be.server.entity.NhanVien dummyNhanVien = new com.be.server.entity.NhanVien();
                 dummyNhanVien.setId("1");
                 dummyNhanVien.setEmail("admin@gmail.com");
